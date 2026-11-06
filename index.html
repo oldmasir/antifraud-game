@@ -863,6 +863,7 @@ var WavEngine = {
   pending: null,    // 当前正在播放的 {source, gain}
   wavQueue: [],     // WAV播放队列
   busy: false,      // 是否在播放中
+  gen: 0,           // 代次令牌：stop() 时自增，在途加载完成后比对，过期则丢弃（防切页漏播）
   root: 'voice/',   // 资源根目录
   // 文本 -> 文件名的模糊匹配缓存（防止每次请求都重复HEAD）
   textCache: {},
@@ -909,8 +910,10 @@ var WavEngine = {
     if(!AudioCtx){ done && done(); return; }
     initAudio();
     if(AudioCtx.state === 'suspended'){ AudioCtx.resume(); }
+    var myGen = WavEngine.gen;   // 记录开始加载时的代次
     this.loadBuffer(rel, function(err, buf){
-      if(err){ done && done(err); return; }
+      // 切页已发生（gen 变化）→ 丢弃这条在途语音，避免旧页声音漏播
+      if(err || myGen !== WavEngine.gen){ done && done(err); return; }
       var src = AudioCtx.createBufferSource();
       var gain = AudioCtx.createGain();
       gain.gain.value = 0.95;
@@ -926,6 +929,7 @@ var WavEngine = {
   },
 
   stop: function(){
+    this.gen++;   // 令代次失效，使任何在途加载的旧语音作废
     if(this.pending){
       try{ this.pending.source.onended = null; this.pending.source.stop(0); }catch(e){}
       this.pending = null;
@@ -2965,9 +2969,9 @@ function renderScene(node, nodeId){
     // 注意：即使是 system 旁白，若存在对应的 WAV 也要播放（否则只朗读人物台词）
     var sp = node.avatar || '';
     if(sp !== ''){
-      scheduleVoice(node.text, node.avatar, 600, nodeId);
+      scheduleVoice(node.text, node.avatar, 220, nodeId);
     }else{
-      scheduleVoice(node.text, 'system', 600, nodeId);
+      scheduleVoice(node.text, 'system', 220, nodeId);
     }
   }
   else if(scene === 'chat'){
@@ -2980,7 +2984,7 @@ function renderScene(node, nodeId){
     playSFX('ring');
     // 骗子来电台词朗读；"(我...)"/"（我...）"开头的台词是受害人自己说的
     var selfTalk = /^[（(]我/.test(node.text || '');
-    scheduleVoice(node.text, selfTalk ? 'mc' : node.avatar, 900, nodeId);
+    scheduleVoice(node.text, selfTalk ? 'mc' : node.avatar, 320, nodeId);
   }
   else if(scene === 'transfer'){
     area.innerHTML = renderTransfer(node);
@@ -2990,7 +2994,7 @@ function renderScene(node, nodeId){
     area.innerHTML = renderPopup(node);
     playSFX('message');
     // 弹窗多为数据/权限表格，只朗读诈骗分子的"口头话术"
-    if(node.voice) scheduleVoice(node.voice, node.avatar, 700, nodeId);
+    if(node.voice) scheduleVoice(node.voice, node.avatar, 280, nodeId);
   }
 
   // 滚到底部
@@ -3010,7 +3014,7 @@ function scheduleVoice(text, avatar, delay, nodeId){
 function scheduleChatVoice(node, nodeId){
   var msgs = node.messages || [];
   var myId = speechScheduleId;
-  var t = 700;
+  var t = 300;
   msgs.forEach(function(m, i){
     if(m.from === 'system') return; // 系统消息不朗读
     var av = (m.from === 'self') ? 'mc' : (node.avatar || 'stranger');
@@ -3021,7 +3025,7 @@ function scheduleChatVoice(node, nodeId){
         speakWithWav(nodeId, msg, prof, hint);
       }, d);
     })(m.text, av, t, i, m.from);
-    t += Math.min(2600, Math.max(700, String(m.text).length * 110));
+    t += Math.min(2000, Math.max(450, String(m.text).length * 100));
   });
 }
 
