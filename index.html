@@ -1,0 +1,3774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#0f1923">
+<title>重生反诈：以牙还牙</title>
+<style>
+/* ============================================================
+   重生反诈：以牙还牙 — 全部样式
+   主色调：蓝色警示风；强调色：红色警示；成功色：绿色
+   布局：手机框 + 顶部状态栏 + 中间剧情区 + 底部选项区
+   ============================================================ */
+
+/* ===== 重置 & 基础 ===== */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f1923;--bg2:#16263a;--phone:#1a1a2e;--screen:#f0f4f8;
+  --pri:#2563eb;--pri-d:#1d4ed8;--pri-l:#3b82f6;
+  --warn:#ef4444;--warn-l:#f87171;--succ:#22c55e;--succ-l:#4ade80;
+  --gold:#fbbf24;--purple:#8b5cf6;--orange:#f97316;
+  --text:#1e293b;--text-l:#64748b;--text-d:#0f172a;
+  --surf:#ffffff;--border:#e2e8f0;--border-d:#cbd5e1;
+  --r:12px;--r-s:8px;--r-l:20px;
+  --shadow:0 4px 12px rgba(0,0,0,.15);
+  --shadow-l:0 8px 30px rgba(0,0,0,.25);
+  --pw:420px;--ph:780px;
+}
+html,body{height:100%;overflow:hidden}
+#app{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei','Helvetica Neue',sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;
+}
+
+/* ===== 背景Canvas ===== */
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+#rebirthCanvas{position:fixed;inset:0;z-index:9998;display:none;pointer-events:none}
+
+/* ===== 屏幕管理 ===== */
+.screen{display:none;position:relative;z-index:1;width:100%;height:100%;min-height:0}
+.screen.active{display:flex}
+
+/* ===== 标题界面 ===== */
+#screen-title{align-items:center;justify-content:center;flex-direction:column;padding:20px;text-align:center;position:relative;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#screen-title::before{content:'';position:absolute;inset:0;background:url('avatars/title_bg.jpg') center/cover;opacity:.25;z-index:0}
+#screen-title::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,25,35,.5),rgba(15,25,35,.9));z-index:0}
+#screen-title>*{position:relative;z-index:1}
+.title-hero{width:120px;height:120px;border-radius:50%;overflow:hidden;margin-bottom:16px;border:4px solid rgba(37,99,235,.4);box-shadow:0 0 30px rgba(37,99,235,.3),0 4px 20px rgba(0,0,0,.4)}
+.title-hero img{width:100%;height:100%;object-fit:cover}
+.title-logo{font-size:13px;color:var(--pri-l);letter-spacing:6px;margin-bottom:8px;font-weight:600}
+.title-main{font-size:clamp(30px,9vw,44px);font-weight:900;color:#fff;letter-spacing:4px;margin-bottom:6px;
+  text-shadow:0 0 30px rgba(37,99,235,.6),0 2px 8px rgba(0,0,0,.5)}
+.title-sub{font-size:clamp(16px,4.5vw,22px);color:var(--gold);font-weight:700;letter-spacing:2px;margin-bottom:4px}
+.title-desc{font-size:13px;color:var(--text-l);margin-bottom:32px;max-width:300px;line-height:1.8}
+.title-desc b{color:var(--warn-l)}
+.btn-menu{
+  width:260px;max-width:80vw;padding:14px 0;margin:7px 0;border:none;border-radius:var(--r);
+  font-size:17px;font-weight:600;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+}
+.btn-menu.primary{background:linear-gradient(135deg,var(--pri),var(--pri-d));color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.4)}
+.btn-menu.primary:active{transform:scale(.97)}
+.btn-menu.secondary{background:rgba(255,255,255,.08);color:#cbd5e1;border:1.5px solid rgba(255,255,255,.15)}
+.btn-menu.secondary:active{background:rgba(255,255,255,.12)}
+.btn-menu.disabled{opacity:.4;pointer-events:none}
+.title-footer{margin-top:28px;font-size:11px;color:#475569;line-height:1.8}
+.title-footer b{color:var(--warn-l)}
+.title-copyright{margin-top:12px;font-size:10px;color:#64748b;letter-spacing:1px;line-height:1.6;border-top:1px solid rgba(255,255,255,.06);padding-top:10px}
+
+/* ===== 开场CG动画 — 翻书效果 ===== */
+#cg-intro{position:fixed;inset:0;z-index:9999;background:#000;display:none;overflow:hidden;perspective:1500px}
+#cg-intro.active{display:block}
+.cg-page{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;backface-visibility:hidden;opacity:0;transition:transform 1.2s cubic-bezier(.55,.085,.32,1.1),opacity .6s ease}
+.cg-page.current{opacity:1;transform:rotateY(0deg)}
+.cg-page.flipped{opacity:1;transform:rotateY(-180deg)}
+.cg-page img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.cg-page-back{position:absolute;inset:0;background:#0a0a1a;transform:rotateY(180deg);backface-visibility:hidden;display:flex;align-items:center;justify-content:center}
+.cg-page-back::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.9),rgba(0,0,0,.3));}
+.cg-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.65) 100%);pointer-events:none;z-index:1}
+.cg-page .cg-caption{position:absolute;bottom:8%;left:50%;transform:translateX(-50%) translateY(15px);color:#fff;font-size:17px;font-weight:700;text-shadow:0 2px 20px rgba(0,0,0,1),0 0 40px rgba(37,99,235,.4);text-align:center;max-width:85%;opacity:0;transition:all .8s ease .4s;z-index:2;letter-spacing:2px}
+.cg-page.current .cg-caption{opacity:1;transform:translateX(-50%) translateY(0)}
+.cg-spine{position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(90deg,rgba(0,0,0,.8),transparent);z-index:10;pointer-events:none}
+.cg-shadow{position:absolute;left:0;top:0;bottom:0;width:60px;background:linear-gradient(90deg,rgba(0,0,0,.4),transparent);z-index:9;pointer-events:none;opacity:0;transition:opacity .6s ease}
+.cg-page.current .cg-shadow{opacity:1}
+.cg-title-reveal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5;opacity:0;transition:opacity 1.5s ease;background:radial-gradient(ellipse at center,rgba(15,25,35,.3),rgba(0,0,0,.9))}
+.cg-title-reveal.active{opacity:1}
+.cg-title-reveal .main{font-size:clamp(36px,10vw,56px);font-weight:900;color:#fff;letter-spacing:8px;text-shadow:0 0 40px rgba(37,99,235,.8),0 0 80px rgba(37,99,235,.4),0 4px 12px rgba(0,0,0,1);transform:scale(.8);transition:transform 1.5s ease}
+.cg-title-reveal.active .main{transform:scale(1)}
+.cg-title-reveal .sub{position:absolute;bottom:25%;font-size:clamp(14px,4vw,20px);color:var(--gold);font-weight:700;letter-spacing:4px;text-shadow:0 2px 12px rgba(0,0,0,1);opacity:0;transition:opacity 1s ease 1s}
+.cg-title-reveal.active .sub{opacity:1}
+.cg-skip{position:absolute;top:16px;left:16px;z-index:9998;background:rgba(0,0,0,.5);color:#cbd5e1;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;backdrop-filter:blur(4px)}
+.cg-skip:active{background:rgba(0,0,0,.7)}
+
+/* ===== 手机框 ===== */
+#screen-game{align-items:center;justify-content:center;padding:0}
+.phone-frame{
+  width:100%;height:100%;max-width:var(--pw);max-height:var(--ph);
+  background:var(--phone);border-radius:0;position:relative;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.phone-screen{flex:1;background:var(--screen);display:flex;flex-direction:column;overflow:hidden;position:relative;min-height:0}
+
+@media(min-width:481px){
+  .phone-frame{
+    border-radius:36px;border:10px solid #0d0d1a;
+    box-shadow:var(--shadow-l),0 0 0 2px #2a2a3e,0 0 60px rgba(37,99,235,.15);
+    height:calc(100vh - 40px);max-height:var(--ph);
+  }
+}
+@media(max-width:480px){
+  .phone-frame{border-radius:0}
+}
+
+/* ===== 状态栏 ===== */
+.status-bar{
+  display:flex;align-items:center;gap:6px;padding:10px 12px;
+  background:linear-gradient(135deg,var(--bg),var(--bg2));
+  color:#fff;flex-shrink:0;flex-wrap:wrap;position:relative;
+}
+@media(max-width:480px){.status-bar{padding-top:calc(10px + env(safe-area-inset-top))}}
+.stat-chip{
+  display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:var(--r-s);
+  background:rgba(255,255,255,.08);font-size:12px;font-weight:600;white-space:nowrap;
+  transition:all .3s;
+}
+.stat-chip .icon{font-size:14px;line-height:1}
+.stat-chip .val{font-variant-numeric:tabular-nums}
+.stat-chip.assets{background:rgba(37,99,235,.25)}
+.stat-chip.alert{background:rgba(34,197,94,.2)}
+.stat-chip.alert.low{background:rgba(239,68,68,.2)}
+.stat-chip.trust{background:rgba(139,92,246,.2)}
+.stat-chip.rebirth{background:rgba(251,191,36,.15);margin-left:auto}
+.stat-bar{width:50px;height:5px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:2px}
+.stat-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.stat-bar-fill.alert{background:linear-gradient(90deg,var(--warn),var(--succ))}
+.stat-bar-fill.trust{background:linear-gradient(90deg,var(--purple),var(--orange))}
+.chapter-badge{
+  width:100%;text-align:center;font-size:11px;color:var(--text-l);padding:2px 0 0;
+  letter-spacing:1px;
+}
+
+/* ===== 场景区 ===== */
+.scene-area{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.scene-area::-webkit-scrollbar{width:3px}
+.scene-area::-webkit-scrollbar-thumb{background:var(--border-d);border-radius:2px}
+
+/* — 叙述场景 — */
+.scene-narration{padding:30px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;text-align:center;gap:20px;box-sizing:border-box}
+.narration-avatar{width:96px;height:96px;border-radius:50%;overflow:hidden;box-shadow:var(--shadow-l);border:3px solid var(--surf)}
+.narration-avatar img{width:100%;height:100%;object-fit:cover}
+.narration-avatar svg{width:100%;height:100%}
+.narration-text{font-size:17px;line-height:2;color:var(--text);max-width:340px;white-space:pre-line}
+.narration-text .em{color:var(--pri);font-weight:700}
+.narration-text .danger{color:var(--warn);font-weight:700}
+.narration-text .gold{color:var(--gold);font-weight:700}
+
+/* — 聊天场景 — */
+.scene-chat{padding:14px 12px;display:flex;flex-direction:column;gap:10px;min-height:100%;justify-content:flex-end;padding-bottom:20px;box-sizing:border-box}
+.chat-header{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.chat-header .av{width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0}
+.chat-header .av img{width:100%;height:100%;object-fit:cover}
+.chat-header .av svg{width:100%;height:100%}
+.chat-header .name{font-size:14px;font-weight:600;color:var(--text)}
+.chat-header .status{font-size:11px;color:var(--succ);margin-left:auto}
+.chat-bubble{
+  max-width:78%;padding:10px 14px;border-radius:16px;font-size:15px;line-height:1.6;
+  position:relative;animation:bubbleIn .3s ease-out;word-break:break-word;
+}
+.chat-bubble.other{
+  align-self:flex-start;background:var(--surf);color:var(--text);
+  border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.08);
+}
+.chat-bubble.self{
+  align-self:flex-end;background:var(--pri);color:#fff;
+  border-bottom-right-radius:4px;box-shadow:0 1px 3px rgba(37,99,235,.3);
+}
+.chat-bubble.system{
+  align-self:center;background:rgba(37,99,235,.08);color:var(--pri);
+  border-radius:var(--r);font-size:13px;padding:6px 16px;text-align:center;max-width:90%;
+}
+.chat-row{display:flex;align-items:flex-end;gap:8px}
+.chat-row .av{width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0}
+.chat-row .av img{width:100%;height:100%;object-fit:cover}
+.chat-row .av svg{width:100%;height:100%}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* — 通话场景 — */
+.scene-call{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100%;background:linear-gradient(160deg,#1a2a3a,#0f1923);color:#fff;padding:30px 20px;gap:16px;
+}
+.call-icon{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:32px;animation:callPulse 2s infinite;overflow:hidden}
+.call-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+@keyframes callPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.2)}50%{box-shadow:0 0 0 16px rgba(255,255,255,0)}}
+.call-name{font-size:22px;font-weight:700}
+.call-num{font-size:13px;color:#94a3b8}
+.call-timer{font-size:13px;color:#64748b;font-variant-numeric:tabular-nums}
+.call-subtitle{
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--r);padding:14px 18px;font-size:15px;line-height:1.7;
+  max-width:340px;text-align:center;
+}
+.call-subtitle .danger{color:var(--warn-l);font-weight:700}
+
+/* — 转账场景 — */
+.scene-transfer{padding:20px;background:#eef2f7;min-height:100%}
+.transfer-title{text-align:center;font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px}
+.transfer-card{background:#fff;border-radius:var(--r);padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+.transfer-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9}
+.transfer-row:last-child{border:none}
+.transfer-label{font-size:13px;color:var(--text-l)}
+.transfer-val{font-size:14px;font-weight:600;color:var(--text)}
+.transfer-amount-box{text-align:center;padding:20px 0}
+.transfer-amount-box .label{font-size:12px;color:var(--text-l);margin-bottom:4px}
+.transfer-amount-box .amount{font-size:36px;font-weight:800;color:var(--warn);font-variant-numeric:tabular-nums}
+.transfer-amount-box .amount.safe{color:var(--pri)}
+.transfer-warning{
+  background:#fef2f2;border:1px solid #fecaca;border-radius:var(--r-s);
+  padding:10px 14px;font-size:13px;color:var(--warn);text-align:center;margin-bottom:12px;
+}
+
+/* — 弹窗通知场景 — */
+.scene-popup{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:30px 20px;background:#1a1a2e;gap:16px}
+.popup-phone{
+  width:280px;max-width:85vw;background:#1c1c2e;border-radius:24px;
+  border:2px solid #2a2a3e;padding:16px;box-shadow:var(--shadow-l);
+}
+.popup-bar{display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:12px}
+.popup-notification{background:#2a2a3e;border-radius:12px;padding:14px;display:flex;gap:10px}
+.popup-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden}
+.popup-icon img{width:100%;height:100%;object-fit:cover}
+.popup-icon svg{width:100%;height:100%}
+.popup-content .title{font-size:13px;font-weight:700;color:#fff}
+.popup-content .text{font-size:12px;color:#94a3b8;line-height:1.5;margin-top:2px}
+
+/* ===== 选项区 ===== */
+.choice-area{
+  flex-shrink:0;padding:10px 12px;gap:8px;display:flex;flex-direction:column;
+  background:var(--screen);border-top:1px solid var(--border);
+}
+@media(max-width:480px){.choice-area{padding-bottom:calc(10px + env(safe-area-inset-bottom))}}
+.choice-btn{
+  width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:var(--r);
+  background:var(--surf);font-size:15px;font-weight:500;color:var(--text);
+  cursor:pointer;transition:all .2s;text-align:left;display:flex;align-items:center;gap:8px;
+  animation:choiceIn .25s ease-out backwards;
+}
+.choice-btn:active{transform:scale(.98);background:#f8fafc}
+.choice-btn.correct{border-color:var(--succ);background:#f0fdf4}
+.choice-btn.counter{border-color:var(--gold);background:#fffbeb}
+.choice-btn.danger{border-color:var(--warn);background:#fef2f2}
+.choice-btn .arrow{margin-left:auto;color:var(--text-l);font-size:13px;flex-shrink:0}
+.choice-btn .lock{color:var(--text-l);font-size:12px;flex-shrink:0}
+.choice-btn.locked{opacity:.5;background:#f8fafc}
+.choice-btn.locked .lock{color:var(--warn)}
+@keyframes choiceIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== 知识弹窗 ===== */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;
+  display:flex;align-items:flex-start;justify-content:center;padding:20px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  animation:fadeIn .25s;
+}
+.modal-overlay.hidden{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-card{
+  background:#fff;border-radius:var(--r-l);max-width:380px;width:100%;
+  max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:var(--shadow-l);animation:modalIn .3s ease-out;
+  margin:auto 0;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{
+  background:linear-gradient(135deg,var(--pri),var(--pri-d));color:#fff;
+  padding:16px 20px;border-radius:var(--r-l) var(--r-l) 0 0;text-align:center;
+}
+.modal-header .badge{font-size:11px;letter-spacing:2px;opacity:.8;margin-bottom:4px}
+.modal-header .title{font-size:18px;font-weight:700}
+.modal-body{padding:20px}
+.modal-body h4{font-size:14px;color:var(--pri);margin:14px 0 6px;font-weight:700}
+.modal-body h4:first-child{margin-top:0}
+.modal-body ul{list-style:none;padding:0}
+.modal-body li{font-size:13px;color:var(--text);padding:4px 0;padding-left:20px;position:relative;line-height:1.6}
+.modal-body li::before{content:'●';position:absolute;left:0;color:var(--pri);font-size:10px;top:6px}
+.modal-body .hotline{
+  background:#fef2f2;border-radius:var(--r-s);padding:12px;text-align:center;
+  margin-top:16px;border:1px solid #fecaca;
+}
+.modal-body .hotline .num{font-size:24px;font-weight:900;color:var(--warn);letter-spacing:2px}
+.modal-body .hotline .desc{font-size:12px;color:var(--text-l);margin-top:4px}
+.modal-body .app-promo{
+  background:#eff6ff;border-radius:var(--r-s);padding:10px;text-align:center;
+  margin-top:8px;font-size:12px;color:var(--pri);border:1px solid #bfdbfe;
+}
+.modal-close{
+  width:100%;padding:14px;border:none;background:var(--pri);color:#fff;
+  border-radius:var(--r);font-size:16px;font-weight:600;cursor:pointer;margin-top:16px;
+}
+.modal-close:active{background:var(--pri-d)}
+
+/* ===== 成就弹窗 ===== */
+.achievement-popup{
+  position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:200;
+  background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;
+  border:2px solid var(--gold);border-radius:var(--r);padding:12px 20px;
+  display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(251,191,36,.3);
+  animation:achPop .4s ease-out;max-width:340px;
+}
+@keyframes achPop{0%{opacity:0;transform:translateX(-50%) translateY(-30px) scale(.8)}100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+.ach-icon{font-size:28px}
+.ach-info .label{font-size:10px;color:var(--gold);letter-spacing:2px}
+.ach-info .name{font-size:15px;font-weight:700}
+
+/* ===== Toast提示 ===== */
+.toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:150;
+  background:rgba(30,41,59,.95);color:#fff;padding:8px 18px;border-radius:20px;
+  font-size:13px;box-shadow:var(--shadow);animation:toastIn .3s;max-width:300px;text-align:center;
+}
+.toast.hidden{display:none}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.toast.success{background:rgba(22,101,52,.95)}
+.toast.danger{background:rgba(153,27,27,.95)}
+.toast.gold{background:rgba(120,53,15,.95);border:1px solid var(--gold)}
+
+/* ===== 反击特效 ===== */
+.counter-flash{
+  position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+  background:rgba(37,99,235,.85);animation:cFlash 1.8s ease-out forwards;pointer-events:none;
+}
+.counter-flash span{font-size:42px;font-weight:900;color:#fff;letter-spacing:10px;
+  text-shadow:0 0 30px rgba(255,255,255,.6);animation:cText 1.8s ease-out forwards}
+@keyframes cFlash{0%{opacity:0}15%{opacity:1}75%{opacity:1}100%{opacity:0}}
+@keyframes cText{0%{transform:scale(.5);opacity:0}20%{transform:scale(1.1);opacity:1}80%{transform:scale(1);opacity:1}100%{transform:scale(1.2);opacity:0}}
+
+/* ===== 结局界面 ===== */
+#screen-ending{min-height:0;align-items:center;justify-content:center;flex-direction:column;padding:30px;text-align:center;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.ending-badge{font-size:12px;letter-spacing:4px;margin-bottom:8px;font-weight:600}
+.ending-title{font-size:clamp(28px,8vw,38px);font-weight:900;margin-bottom:16px;letter-spacing:2px}
+.ending-text{font-size:15px;line-height:2;max-width:360px;margin-bottom:20px;white-space:pre-line}
+.ending-stats{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;justify-content:center}
+.ending-stat{background:rgba(255,255,255,.06);border-radius:var(--r-s);padding:10px 16px;text-align:center}
+.ending-stat .v{font-size:22px;font-weight:800}
+.ending-stat .l{font-size:11px;color:var(--text-l);margin-top:2px}
+.ending-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* ===== 图鉴界面 ===== */
+#screen-encyclopedia,#screen-achievements{min-height:0;flex-direction:column;padding:20px;overflow-y:auto;align-items:center;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.enc-header,.ach-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;width:100%;max-width:400px}
+.enc-back,.ach-back{background:rgba(255,255,255,.08);color:#fff;border:none;border-radius:8px;
+  padding:8px 12px;font-size:13px;cursor:pointer;flex-shrink:0}
+.enc-title,.ach-title{font-size:18px;font-weight:700;color:#fff}
+.enc-grid,.ach-grid{display:grid;grid-template-columns:1fr;gap:12px;width:100%;max-width:400px;padding-bottom:40px}
+.enc-card{
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  border-radius:var(--r);padding:16px;color:#fff;transition:all .2s;
+}
+.enc-card.locked{opacity:.4}
+.enc-card .enc-type{font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:4px}
+.enc-card .enc-name{font-size:16px;font-weight:700;margin-bottom:8px}
+.enc-card .enc-desc{font-size:13px;color:#94a3b8;line-height:1.6}
+.enc-card.locked .enc-desc{color:#475569}
+.ach-card{
+  background:rgba(255,255,255,.05);border-radius:var(--r);padding:14px;
+  display:flex;gap:12px;align-items:center;border:1px solid rgba(255,255,255,.06);
+}
+.ach-card.unlocked{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.05)}
+.ach-icon-lg{font-size:28px;flex-shrink:0;width:40px;text-align:center}
+.ach-card .ach-name{font-size:14px;font-weight:600;color:#fff}
+.ach-card.locked .ach-name{color:#64748b}
+.ach-card .ach-desc{font-size:12px;color:#94a3b8;margin-top:2px}
+
+/* ===== 提示文字 ===== */
+.choice-tip{
+  text-align:center;font-size:12px;color:var(--text-l);padding:4px 0;
+  animation:toastIn .3s;
+}
+.choice-tip.success{color:var(--succ)}
+.choice-tip.danger{color:var(--warn)}
+.choice-tip.gold{color:var(--gold)}
+
+/* ===== 反诈宣传横幅 ===== */
+.anti-fraud-banner{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(135deg,#1e3a5f,#0f1923);
+  border-top:1px solid rgba(37,99,235,.3);
+  padding:6px 12px;font-size:11px;color:#94a3b8;
+  flex-shrink:0;
+}
+.anti-fraud-banner .hotline-num{color:#f87171;font-weight:800;font-size:13px;letter-spacing:1px}
+.anti-fraud-banner .divider{color:#334155}
+.anti-fraud-banner .app-name{color:#60a5fa;font-weight:600}
+
+/* ===== 反诈标识徽章 ===== */
+.anti-fraud-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);
+  border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;
+  color:#f87171;letter-spacing:.5px;
+}
+.anti-fraud-badge.blue{background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.2);color:#60a5fa}
+
+/* ===== 知识弹窗统一结尾提示 ===== */
+.knowledge-footer-tip{
+  background:linear-gradient(135deg,#fef2f2,#eff6ff);
+  border:1.5px solid #fecaca;border-radius:var(--r-s);
+  padding:12px 14px;margin-top:12px;text-align:center;
+}
+.knowledge-footer-tip .tip-main{font-size:13px;font-weight:600;color:#1e293b;line-height:1.7}
+.knowledge-footer-tip .tip-hotline{font-size:22px;font-weight:900;color:#ef4444;letter-spacing:3px;margin:4px 0}
+.knowledge-footer-tip .tip-app{font-size:12px;color:#2563eb;font-weight:600;margin-top:4px}
+
+/* ===== 升级：按钮交互增强 ===== */
+.btn-menu{transition:all .25s cubic-bezier(.4,0,.2,1)}
+.btn-menu:hover{transform:translateY(-2px)}
+.btn-menu.primary:hover{box-shadow:0 8px 24px rgba(37,99,235,.5)}
+.btn-menu.secondary:hover{background:rgba(255,255,255,.14);transform:translateY(-1px)}
+
+.choice-btn{transition:all .2s cubic-bezier(.4,0,.2,1)}
+.choice-btn:hover{border-color:var(--pri);box-shadow:0 2px 8px rgba(37,99,235,.12);transform:translateX(2px)}
+.choice-btn.correct:hover{border-color:var(--succ);box-shadow:0 2px 8px rgba(34,197,94,.15)}
+.choice-btn.counter:hover{border-color:var(--gold);box-shadow:0 2px 8px rgba(251,191,36,.15)}
+.choice-btn.danger:hover{border-color:var(--warn);box-shadow:0 2px 8px rgba(239,68,68,.15)}
+
+.modal-close:hover{background:var(--pri-d)}
+.enc-back:hover,.ach-back:hover{background:rgba(255,255,255,.14)}
+
+/* ===== 升级：卡片柔光效果 ===== */
+.modal-card{position:relative}
+.modal-card::before{
+  content:'';position:sticky;top:0;display:block;height:4px;
+  background:linear-gradient(90deg,var(--pri),var(--gold),var(--warn));
+  border-radius:var(--r-l) var(--r-l) 0 0;z-index:1;
+}
+
+/* ===== 升级：场景过渡 ===== */
+.scene-area{transition:opacity .3s ease}
+.scene-area.transitioning{opacity:0}
+
+/* ===== 音频控制 ===== */
+#audio-controls{position:fixed;top:12px;right:12px;z-index:9999;display:flex;gap:8px}
+#audio-controls button{width:40px;height:40px;border-radius:50%;border:none;background:rgba(37,99,235,.8);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.3);transition:all .2s;backdrop-filter:blur(4px)}
+#audio-controls.hidden-by-cg{display:none}
+#audio-controls button:active{transform:scale(.9)}
+#audio-controls button.muted{background:rgba(100,116,139,.6)}
+
+/* ===== 加载屏 ===== */
+#loading-screen{position:fixed;inset:0;z-index:10000;background:#0f1923;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .6s ease}
+#loading-screen.done{opacity:0;pointer-events:none}
+.loading-logo{font-size:13px;color:#3b82f6;letter-spacing:6px;font-weight:600}
+.loading-title{font-size:32px;font-weight:900;color:#fff;letter-spacing:4px;text-shadow:0 0 30px rgba(37,99,235,.6)}
+.loading-bar{width:200px;height:4px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
+.loading-bar-fill{height:100%;width:0%;border-radius:2px;background:linear-gradient(90deg,#2563eb,#60a5fa);transition:width .3s ease}
+.loading-text{font-size:12px;color:#64748b}
+
+/* ===== 分享按钮 ===== */
+.share-btn{display:inline-block;margin-top:12px;padding:8px 20px;border-radius:8px;background:rgba(37,99,235,.2);color:#60a5fa;font-size:13px;font-weight:600;border:1px solid rgba(37,99,235,.3);cursor:pointer}
+.share-btn:active{background:rgba(37,99,235,.3)}
+@media(max-width:380px){
+  .stat-chip{font-size:11px;padding:3px 6px}
+  .stat-bar{width:40px}
+  .narration-text{font-size:15px}
+  .chat-bubble{font-size:14px}
+  .choice-btn{font-size:14px;padding:11px 12px}
+}
+</style>
+</head>
+<body>
+<!-- 加载屏 -->
+<div id="loading-screen">
+  <div class="loading-logo">REBIRTH · ANTI-FRAUD</div>
+  <div class="loading-title">重生反诈</div>
+  <div class="loading-bar"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+  <div class="loading-text" id="loading-text">正在加载资源...</div>
+</div>
+<!-- 背景粒子 -->
+<canvas id="bgCanvas"></canvas>
+<!-- 重生动画 -->
+<canvas id="rebirthCanvas"></canvas>
+<!-- 音频控制 -->
+<div id="audio-controls">
+  <button id="voice-toggle" onclick="toggleVoice()" title="语音播报">🎙</button>
+  <button id="audio-toggle" onclick="toggleAudio()" title="音效开关">🔊</button>
+</div>
+<!-- 开场CG动画 -->
+<div id="cg-intro">
+  <button class="cg-skip" onclick="skipCGIntro()">跳过 ⏭</button>
+</div>
+
+<div id="app">
+  <!-- ========== 标题界面 ========== -->
+  <div id="screen-title" class="screen active">
+    <div class="title-hero"><img src="avatars/mc.png" alt="主角" onerror="this.style.display='none'"></div>
+    <div class="title-logo">REBIRTH · ANTI-FRAUD</div>
+    <div class="title-main">重生反诈</div>
+    <div class="title-sub">以牙还牙</div>
+    <div class="title-desc">前世被骗尽家财，今朝重生归来。<br>识破骗局，反击骗子，守护财产！<br><b>你的选择，决定命运。</b></div>
+    <button class="btn-menu primary" onclick="startNewGame()">开始新游戏</button>
+    <button class="btn-menu secondary" id="btn-continue" onclick="continueGame()">继续游戏</button>
+    <button class="btn-menu secondary" onclick="showScreen('encyclopedia')">反诈知识图鉴</button>
+    <button class="btn-menu secondary" onclick="showScreen('achievements')">成就</button>
+    <div class="title-footer">
+      <div class="anti-fraud-badge" style="margin-bottom:6px">☎ 全国统一反诈热线</div>
+      <span style="font-size:20px;font-weight:900;color:#f87171;letter-spacing:4px">96110</span><br>
+      <span>遇到可疑电信诈骗，请拨打 <b style="color:#f87171">96110</b> 咨询举报</span><br>
+      <span>下载 <b style="color:#60a5fa">国家反诈中心</b> APP 防范电信网络诈骗</span>
+    </div>
+    <div class="title-copyright">© 七里河区反诈中心 出品</div>
+    <button class="share-btn" onclick="shareGame()">📤 分享游戏</button>
+  </div>
+
+  <!-- ========== 游戏界面 ========== -->
+  <div id="screen-game" class="screen">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <!-- 状态栏 -->
+        <div class="status-bar" id="statusBar"></div>
+        <!-- 场景区 -->
+        <div class="scene-area" id="sceneArea"></div>
+        <!-- 选项区 -->
+        <div class="choice-area" id="choiceArea"></div>
+        <!-- 反诈宣传栏 -->
+        <div class="anti-fraud-banner">
+          <span class="anti-fraud-badge">☎ 96110</span>
+          <span class="divider">|</span>
+          <span class="app-name">国家反诈中心 APP</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 结局界面 ========== -->
+  <div id="screen-ending" class="screen"></div>
+
+  <!-- ========== 图鉴界面 ========== -->
+  <div id="screen-encyclopedia" class="screen">
+    <div class="enc-header">
+      <button class="enc-back" onclick="showScreen('title')">← 返回</button>
+      <div class="enc-title">反诈知识图鉴</div>
+    </div>
+    <div class="enc-grid" id="encGrid"></div>
+  </div>
+
+  <!-- ========== 成就界面 ========== -->
+  <div id="screen-achievements" class="screen">
+    <div class="ach-header">
+      <button class="ach-back" onclick="showScreen('title')">← 返回</button>
+      <div class="ach-title">成就</div>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+  </div>
+</div>
+
+<!-- 知识弹窗 -->
+<div id="knowledgePopup" class="modal-overlay hidden"></div>
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<script>
+/* ============================================================
+   重生反诈：以牙还牙 — 游戏引擎
+   架构：数据驱动 + 场景渲染器 + 状态机
+   修改指南：在 STORY_NODES 中新增节点即可扩展剧情
+   ============================================================
+   节点格式:
+   {
+     scene: 'narration'|'chat'|'call'|'transfer'|'popup',
+     speaker: '说话者名',
+     avatar: '头像类型',
+     text: '文本（\n换行）',
+     messages: [{from:'other'|'self',text:'...'}], // chat场景用
+     choices: [{
+       text: '选项文字',
+       next: '下一节点ID',
+       effects: { assets:±N, alertness:±N, trust:±N },
+       requires: { alertness: N },  // 解锁条件
+       tip: '选择后提示',
+       tipType: 'success'|'danger'|'gold',
+       tipClass: 'correct'|'counter'|'danger',  // 按钮样式
+       unlockKnowledge: '知识ID',
+       unlockAchievement: '成就ID',
+       rebirth: true,           // 触发重生
+       ending: 'perfect'|'good'|'normal'|'bad',  // 触发结局
+       counter: true,            // 触发反击特效
+       chapter: N,               // 进入第N章
+     }]
+   }
+   ============================================================ */
+
+// ==================== 音频引擎 ====================
+var AudioCtx = null;
+var audioEnabled = true;
+var bgmGain = null;
+var bgmInterval = null;
+
+function initAudio(){
+  if(AudioCtx) return;
+  try{ AudioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return; }
+}
+
+function playSFX(type){
+  if(!audioEnabled || !AudioCtx) return;
+  var now = AudioCtx.currentTime;
+  var osc, gain;
+
+  switch(type){
+    case 'click':
+      osc = AudioCtx.createOscillator(); gain = AudioCtx.createGain();
+      osc.type = 'sine'; osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(400, now + 0.08);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      osc.connect(gain); gain.connect(AudioCtx.destination);
+      osc.start(now); osc.stop(now + 0.1);
+      break;
+    case 'transition':
+      osc = AudioCtx.createOscillator(); gain = AudioCtx.createGain();
+      osc.type = 'sine'; osc.frequency.setValueAtTime(300, now);
+      osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.connect(gain); gain.connect(AudioCtx.destination);
+      osc.start(now); osc.stop(now + 0.2);
+      break;
+    case 'alert':
+      for(var i = 0; i < 2; i++){
+        var o = AudioCtx.createOscillator(); var g = AudioCtx.createGain();
+        o.type = 'square'; o.frequency.setValueAtTime(i === 0 ? 880 : 660, now + i * 0.15);
+        g.gain.setValueAtTime(0, now + i * 0.15);
+        g.gain.linearRampToValueAtTime(0.08, now + i * 0.15 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.12);
+        o.connect(g); g.connect(AudioCtx.destination);
+        o.start(now + i * 0.15); o.stop(now + i * 0.15 + 0.12);
+      }
+      break;
+    case 'success':
+      [523, 659, 784].forEach(function(freq, i){
+        var o = AudioCtx.createOscillator(); var g = AudioCtx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(freq, now + i * 0.08);
+        g.gain.setValueAtTime(0, now + i * 0.08);
+        g.gain.linearRampToValueAtTime(0.1, now + i * 0.08 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.2);
+        o.connect(g); g.connect(AudioCtx.destination);
+        o.start(now + i * 0.08); o.stop(now + i * 0.08 + 0.2);
+      });
+      break;
+    case 'danger':
+      osc = AudioCtx.createOscillator(); gain = AudioCtx.createGain();
+      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.3);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc.connect(gain); gain.connect(AudioCtx.destination);
+      osc.start(now); osc.stop(now + 0.35);
+      break;
+    case 'achievement':
+      [659, 784, 988, 1175].forEach(function(freq, i){
+        var o = AudioCtx.createOscillator(); var g = AudioCtx.createGain();
+        o.type = 'triangle'; o.frequency.setValueAtTime(freq, now + i * 0.06);
+        g.gain.setValueAtTime(0, now + i * 0.06);
+        g.gain.linearRampToValueAtTime(0.08, now + i * 0.06 + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.3);
+        o.connect(g); g.connect(AudioCtx.destination);
+        o.start(now + i * 0.06); o.stop(now + i * 0.06 + 0.3);
+      });
+      break;
+    case 'rebirth':
+      for(var i = 0; i < 6; i++){
+        var o = AudioCtx.createOscillator(); var g = AudioCtx.createGain();
+        var freq = 200 + i * 100;
+        o.type = 'sine'; o.frequency.setValueAtTime(freq, now + i * 0.1);
+        g.gain.setValueAtTime(0, now + i * 0.1);
+        g.gain.linearRampToValueAtTime(0.06, now + i * 0.1 + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.4);
+        o.connect(g); g.connect(AudioCtx.destination);
+        o.start(now + i * 0.1); o.stop(now + i * 0.1 + 0.4);
+      }
+      break;
+    case 'counter':
+      osc = AudioCtx.createOscillator(); gain = AudioCtx.createGain();
+      osc.type = 'square'; osc.frequency.setValueAtTime(1200, now);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(gain); gain.connect(AudioCtx.destination);
+      osc.start(now); osc.stop(now + 0.08);
+      var o2 = AudioCtx.createOscillator(); var g2 = AudioCtx.createGain();
+      o2.type = 'sine'; o2.frequency.setValueAtTime(440, now + 0.05);
+      g2.gain.setValueAtTime(0.08, now + 0.05);
+      g2.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      o2.connect(g2); g2.connect(AudioCtx.destination);
+      o2.start(now + 0.05); o2.stop(now + 0.2);
+      break;
+    case 'message':
+      osc = AudioCtx.createOscillator(); gain = AudioCtx.createGain();
+      osc.type = 'sine'; osc.frequency.setValueAtTime(960, now);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      osc.connect(gain); gain.connect(AudioCtx.destination);
+      osc.start(now); osc.stop(now + 0.1);
+      break;
+    case 'ring':
+      // 来电铃声（模拟座机振铃）
+      for(var ri = 0; ri < 4; ri++){
+        var ro = AudioCtx.createOscillator(); var rg = AudioCtx.createGain();
+        ro.type = 'sine'; ro.frequency.setValueAtTime(ri % 2 === 0 ? 620 : 480, now + ri * 0.35);
+        rg.gain.setValueAtTime(0, now + ri * 0.35);
+        rg.gain.linearRampToValueAtTime(0.12, now + ri * 0.35 + 0.03);
+        rg.gain.exponentialRampToValueAtTime(0.001, now + ri * 0.35 + 0.28);
+        ro.connect(rg); rg.connect(AudioCtx.destination);
+        ro.start(now + ri * 0.35); ro.stop(now + ri * 0.35 + 0.28);
+      }
+      break;
+    case 'cash':
+      // 转账清点声
+      [988, 1319, 1568].forEach(function(freq, ci){
+        var co = AudioCtx.createOscillator(); var cg = AudioCtx.createGain();
+        co.type = 'triangle'; co.frequency.setValueAtTime(freq, now + ci * 0.05);
+        cg.gain.setValueAtTime(0, now + ci * 0.05);
+        cg.gain.linearRampToValueAtTime(0.1, now + ci * 0.05 + 0.01);
+        cg.gain.exponentialRampToValueAtTime(0.001, now + ci * 0.05 + 0.18);
+        co.connect(cg); cg.connect(AudioCtx.destination);
+        co.start(now + ci * 0.05); co.stop(now + ci * 0.05 + 0.18);
+      });
+      break;
+  }
+}
+
+// ==================== 背景音乐 ====================
+// 程序生成环境循环，按章节氛围切换音阶与节奏
+var bgmScales = {
+  calm:  [220, 247, 277, 294, 330, 370, 415, 440], // 平和（序章/前期）
+  tense: [208, 233, 262, 277, 311, 349, 392, 440], // 紧张（中期）
+  dark:  [185, 208, 233, 247, 277, 311, 349, 392], // 压迫（终章）
+};
+var bgmScale = bgmScales.calm;
+var bgmMood = 'calm';
+var bgmNoteIdx = 0;
+var bgmBeatCount = 0;
+var bgmPadChords = [1, 1.25, 1.498]; // 大三和弦
+
+function setBGMChapter(ch){
+  var mood = 'calm';
+  if(ch >= 7) mood = 'dark';
+  else if(ch >= 4) mood = 'tense';
+  bgmMood = mood;
+  bgmScale = bgmScales[mood];
+}
+
+function startBGM(){
+  if(!audioEnabled || !AudioCtx || bgmInterval) return;
+  bgmGain = AudioCtx.createGain();
+  bgmGain.gain.value = 0.03;
+  bgmGain.connect(AudioCtx.destination);
+
+  bgmInterval = setInterval(function(){
+    if(!audioEnabled || !AudioCtx){ stopBGM(); return; }
+    var now = AudioCtx.currentTime;
+
+    // 低音
+    if(bgmBeatCount % 4 === 0){
+      var bassOsc = AudioCtx.createOscillator();
+      var bassGain = AudioCtx.createGain();
+      bassOsc.type = 'sine';
+      bassOsc.frequency.value = bgmScale[0] / 2;
+      bassGain.gain.setValueAtTime(0, now);
+      bassGain.gain.linearRampToValueAtTime(0.5, now + 0.05);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+      bassOsc.connect(bassGain); bassGain.connect(bgmGain);
+      bassOsc.start(now); bassOsc.stop(now + 1.5);
+    }
+
+    // 和声垫（每4拍一组）
+    if(bgmBeatCount % 4 === 2){
+      var rootFreq = bgmScale[Math.floor(bgmNoteIdx / 4) % 2 === 0 ? 0 : 2] / 2;
+      bgmPadChords.forEach(function(mult){
+        var pOsc = AudioCtx.createOscillator();
+        var pGain = AudioCtx.createGain();
+        pOsc.type = 'sine';
+        pOsc.frequency.value = rootFreq * mult;
+        pGain.gain.setValueAtTime(0, now);
+        pGain.gain.linearRampToValueAtTime(0.15, now + 0.15);
+        pGain.gain.exponentialRampToValueAtTime(0.001, now + 2.8);
+        pOsc.connect(pGain); pGain.connect(bgmGain);
+        pOsc.start(now); pOsc.stop(now + 2.8);
+      });
+    }
+
+    // 鼓点（紧张的节奏）
+    if(bgmMood !== 'calm' && bgmBeatCount % 4 === 3){
+      var hOsc = AudioCtx.createOscillator();
+      var hGain = AudioCtx.createGain();
+      hOsc.type = 'sine';
+      hOsc.frequency.value = 2200;
+      hGain.gain.setValueAtTime(0.06, now);
+      hGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      hOsc.connect(hGain); hGain.connect(bgmGain);
+      hOsc.start(now); hOsc.stop(now + 0.06);
+    }
+
+    var noteFreq = bgmScale[bgmNoteIdx % bgmScale.length];
+    var melOsc = AudioCtx.createOscillator();
+    var melGain = AudioCtx.createGain();
+    melOsc.type = 'triangle';
+    melOsc.frequency.value = noteFreq;
+    melGain.gain.setValueAtTime(0, now);
+    melGain.gain.linearRampToValueAtTime(0.3, now + 0.1);
+    melGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+    melOsc.connect(melGain); melGain.connect(bgmGain);
+    melOsc.start(now); melOsc.stop(now + 1.2);
+
+    bgmNoteIdx++;
+    bgmBeatCount++;
+  }, 700);
+}
+
+function stopBGM(){
+  if(bgmInterval){ clearInterval(bgmInterval); bgmInterval = null; }
+  if(bgmGain){ try{ bgmGain.gain.exponentialRampToValueAtTime(0.001, AudioCtx.currentTime + 0.5); }catch(e){} }
+  bgmGain = null;
+}
+
+function toggleAudio(){
+  audioEnabled = !audioEnabled;
+  var btn = document.getElementById('audio-toggle');
+  if(audioEnabled){
+    btn.textContent = '🔊';
+    btn.classList.remove('muted');
+    initAudio();
+    if(AudioCtx && AudioCtx.state === 'suspended') AudioCtx.resume();
+    startBGM();
+  }else{
+    btn.textContent = '🔇';
+    btn.classList.add('muted');
+    stopBGM();
+    stopSpeech();
+    try{ if(WavEngine) WavEngine.stop(); }catch(e){}
+  }
+  try{ localStorage.setItem('antiFraud_audio', audioEnabled ? '1' : '0'); }catch(e){}
+}
+
+function loadAudioPref(){
+  try{ var v = localStorage.getItem('antiFraud_audio'); if(v === '0') audioEnabled = false; }catch(e){}
+  if(!audioEnabled){
+    var btn = document.getElementById('audio-toggle');
+    btn.textContent = '🔇'; btn.classList.add('muted');
+  }
+}
+loadAudioPref();
+
+// =============================================================
+// 离线本地WAV语音引擎（完全无需网络，音质稳定自然）
+// - WAV放在 voice/ 目录下，命名：
+//     CG序幕: cg_01.wav ~ cg_07.wav          (康康男声旁白)
+//     序章:   prologue_01.wav ~ prologue_05.wav
+//     剧情节点: <nodeId>.wav  如 ch1_start.wav  ch2_01.wav
+//     聊天消息分段: <nodeId>_other_0.wav  <nodeId>_self_0.wav ...
+// - 机制：若WAV存在 → 用 AudioContext decodeAudioData 播放
+//         若不存在 → 回退 Web Speech API
+// =============================================================
+var WavEngine = {
+  cache: {},        // url -> AudioBuffer 缓存
+  pending: null,    // 当前正在播放的 {source, gain}
+  wavQueue: [],     // WAV播放队列
+  busy: false,      // 是否在播放中
+  root: 'voice/',   // 资源根目录
+  // 文本 -> 文件名的模糊匹配缓存（防止每次请求都重复HEAD）
+  textCache: {},
+
+  // 判断本地WAV是否存在（轻量同步缓存 + 异步fetch验证）
+  _known: {},
+  fileExists: function(rel, cb){
+    if(this._known[rel] === true){ cb(true); return; }
+    if(this._known[rel] === false){ cb(false); return; }
+    var url = this.root + rel + '?v=' + (window.__voiceVersion || 1);
+    fetch(url, {method:'HEAD'}).then(function(r){
+      var ok = r.ok;
+      WavEngine._known[rel] = ok;
+      cb(ok);
+    }).catch(function(){ WavEngine._known[rel] = false; cb(false); });
+  },
+
+  // 加载 AudioBuffer（带缓存）
+  loadBuffer: function(rel, cb){
+    var url = this.root + rel + '?v=' + (window.__voiceVersion || 1);
+    if(this.cache[url]){ cb(null, this.cache[url]); return; }
+    fetch(url)
+      .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.arrayBuffer(); })
+      .then(function(ab){
+        if(!AudioCtx){ cb(new Error('no AudioCtx')); return; }
+        AudioCtx.decodeAudioData(ab.slice(0), function(buf){
+          WavEngine.cache[url] = buf;
+          cb(null, buf);
+        }, function(e){ cb(e); });
+      })
+      .catch(function(e){ cb(e); });
+  },
+
+  // 播放一个wav，完成后调用done()
+  playWav: function(rel, done){
+    if(!AudioCtx){ done && done(); return; }
+    initAudio();
+    if(AudioCtx.state === 'suspended'){ AudioCtx.resume(); }
+    this.loadBuffer(rel, function(err, buf){
+      if(err){ done && done(err); return; }
+      var src = AudioCtx.createBufferSource();
+      var gain = AudioCtx.createGain();
+      gain.gain.value = 0.95;
+      src.buffer = buf;
+      src.connect(gain); gain.connect(AudioCtx.destination);
+      src.onended = function(){
+        if(WavEngine.pending && WavEngine.pending.source === src){ WavEngine.pending = null; }
+        done && done();
+      };
+      src.start(0);
+      WavEngine.pending = { source: src, gain: gain };
+    });
+  },
+
+  stop: function(){
+    if(this.pending){
+      try{ this.pending.source.onended = null; this.pending.source.stop(0); }catch(e){}
+      this.pending = null;
+    }
+    this.wavQueue = [];
+    this.busy = false;
+  },
+
+  // 入队播放（按顺序）
+  enqueue: function(items, allDone){
+    // items: [{rel:'xxx.wav'}]  每一项是wav相对路径
+    var self = this;
+    self.wavQueue = self.wavQueue.concat(items);
+    if(self.busy){ if(allDone) self._finalAllDone = allDone; return; }
+    self.busy = true;
+    function next(){
+      if(!self.wavQueue.length){
+        self.busy = false;
+        var f = self._finalAllDone; self._finalAllDone = null;
+        f && f(); allDone && allDone();
+        return;
+      }
+      var it = self.wavQueue.shift();
+      self.playWav(it.rel, function(){ next(); });
+    }
+    next();
+  }
+};
+
+// 主入口：给定 nodeId + 文本 + 头像 → 优先播放本地WAV，失败则走Web TTS
+// 可选 hint 是一个优先匹配的 wav 文件名（不含路径），用于 CG 序幕等特殊场景
+function speakWithWav(nodeId, text, avatar, hint){
+  if(!voiceEnabled) return;
+  if(!audioEnabled) return;
+  // 候选顺序：hint(.mp3→.wav) → <nodeId>.mp3 → <nodeId>.wav
+  var candidates = [];
+  if(hint){
+    // hint 如果以 .wav 结尾，也尝试 .mp3 版本（edge-tts神经语音优先）
+    if(hint.endsWith('.wav')){
+      candidates.push(hint.replace(/\.wav$/, '.mp3'));
+    }
+    candidates.push(hint);
+  }
+  if(nodeId){
+    candidates.push(nodeId + '.mp3');
+    candidates.push(nodeId + '.wav');
+  }
+
+  function tryCandidate(i){
+    if(i >= candidates.length){ fallbackSpeak(text, avatar); return; }
+    WavEngine.fileExists(candidates[i], function(exists){
+      if(exists){
+        stopSpeech();
+        WavEngine.enqueue([{rel: candidates[i]}]);
+      }else{
+        tryCandidate(i + 1);
+      }
+    });
+  }
+  tryCandidate(0);
+}
+
+// ==================== 语音引擎（Web Speech API 保底） ====================
+// 当本地WAV不存在时使用 Web Speech API 合成中文语音，区分骗子/受害人/旁白音色
+var voiceEnabled = true;
+var speechSynth = ('speechSynthesis' in window) ? window.speechSynthesis : null;
+var speechQueue = [];   // 待朗读队列
+var speechTimer = null; // 队列调度定时器
+var speechScheduleId = 0; // 场景切换时使未执行的延迟朗读失效
+var lastNodeId = '';
+
+// 角色音色配置：rate=语速 pitch=音调
+var VOICE_PROFILES = {
+  scammer: { rate: 1.18, pitch: 1.15, desc: '诈骗分子·油滑急促' },
+  victim:  { rate: 0.95, pitch: 0.8,  desc: '受害人(男)·紧张迟疑' },
+  friend:  { rate: 0.95, pitch: 1.0,  desc: '亲友·关切' },
+  system:  { rate: 0.9,  pitch: 0.85, desc: '旁白(男)·沉稳' },
+};
+// 各角色头像 -> 语音配置
+function voiceProfileFor(avatar){
+  var scam = ['stranger','service','service_scam','guru','loaner','buyer','prosecutor','porn_scam','romance_scam'];
+  if(scam.indexOf(avatar) >= 0) return VOICE_PROFILES.scammer;
+  if(avatar === 'mc') return VOICE_PROFILES.victim;
+  if(avatar === 'friend' || avatar === 'victim') return VOICE_PROFILES.friend;
+  return VOICE_PROFILES.system;
+}
+
+function pickChineseVoice(preferMale){
+  if(!speechSynth) return null;
+  var voices = speechSynth.getVoices();
+  if(!voices || !voices.length) return null;
+  // 优先中文语音
+  var zh = [];
+  for(var i = 0; i < voices.length; i++){
+    var l = (voices[i].lang || '').toLowerCase();
+    if(l.indexOf('zh') === 0) zh.push(voices[i]);
+  }
+  var pool = zh.length ? zh : voices;
+  // 男声优先列表（康康/云希/云扬等）
+  var maleFav = ['kangkang','yunxi','yunyang','yunfeng','yunjian','male'];
+  // 女声优先列表
+  var femaleFav = ['xiaoxiao','xiaoyi','huihui','tingting','yaoyao','google 普通话','普通话'];
+  var fav = preferMale ? maleFav.concat(femaleFav) : femaleFav.concat(maleFav);
+  for(var f = 0; f < fav.length; f++){
+    for(var v = 0; v < pool.length; v++){
+      if(pool[v].name.toLowerCase().indexOf(fav[f]) >= 0) return pool[v];
+    }
+  }
+  return pool[0];
+}
+
+// 保留原speak作为对外兼容别名（但渲染路径已改用speakWithWav）
+function speak(text, avatar){
+  fallbackSpeak(text, avatar);
+}
+function fallbackSpeak(text, avatar){
+  if(!voiceEnabled) return;
+  if(!speechSynth) return;
+  var clean = String(text)
+    .replace(/<[^>]*>/g, '')
+    .replace(/【[^】]*】/g, '')
+    .replace(/[*_~`#]/g, '')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '')
+    .replace(/[★☆◆●■▶▷〔〕"']/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if(!clean) return;
+  // 过长文本按句子边界截断，避免旁白念太久
+  if(clean.length > 120){
+    var cut = clean.substring(0, 120);
+    var idx = Math.max(cut.lastIndexOf('。'), cut.lastIndexOf('！'), cut.lastIndexOf('？'));
+    clean = (idx > 60 ? cut.substring(0, idx + 1) : cut) + '。';
+  }
+  var prof = voiceProfileFor(avatar || 'system');
+  // mc(victim)和system(旁白)用男声，骗子(scammer)和friend用女声
+  var preferMale = (avatar === 'mc' || avatar === 'system' || !avatar || avatar === '');
+  var u = new SpeechSynthesisUtterance(clean);
+  var v = pickChineseVoice(preferMale);
+  if(v){
+    u.voice = v;
+    u.lang = v.lang || 'zh-CN';
+  }else{
+    u.lang = 'zh-CN';
+  }
+  u.rate = prof.rate;
+  u.pitch = prof.pitch;
+  u.volume = 1;
+  // 入队按顺序播放
+  speechQueue.push(u);
+  flushSpeechQueue();
+}
+
+function flushSpeechQueue(){
+  if(speechTimer) return;
+  var playNext = function(){
+    if(speechTimer){ clearTimeout(speechTimer); speechTimer = null; }
+    if(!voiceEnabled){ speechQueue = []; return; }
+    var u = speechQueue.shift();
+    if(!u) return;
+    u.onend = function(){ playNext(); };
+    u.onerror = function(){ playNext(); };
+    try{
+      speechSynth.speak(u);
+      speechTimer = setTimeout(function(){ playNext(); }, u.text.length * 180);
+    }catch(e){ playNext(); }
+  };
+  if(speechSynth.speaking || speechSynth.pending){
+    setTimeout(playNext, 400);
+  }else{
+    playNext();
+  }
+}
+
+function stopSpeech(){
+  speechQueue = [];
+  if(speechTimer){ clearTimeout(speechTimer); speechTimer = null; }
+  if(speechSynth){ try{ speechSynth.cancel(); }catch(e){} }
+  // 同时停止本地WAV播放
+  try{ if(WavEngine) WavEngine.stop(); }catch(e){}
+}
+
+function toggleVoice(){
+  voiceEnabled = !voiceEnabled;
+  var btn = document.getElementById('voice-toggle');
+  if(btn){
+    btn.textContent = voiceEnabled ? '🎙' : '🔇';
+    btn.classList.toggle('muted', !voiceEnabled);
+  }
+  if(!voiceEnabled) stopSpeech();
+  try{ localStorage.setItem('antiFraud_voice', voiceEnabled ? '1' : '0'); }catch(e){}
+}
+
+function loadVoicePref(){
+  try{ var v = localStorage.getItem('antiFraud_voice'); if(v === '0') voiceEnabled = false; }catch(e){}
+  var btn = document.getElementById('voice-toggle');
+  if(btn){
+    btn.textContent = voiceEnabled ? '🎙' : '🔇';
+    btn.classList.toggle('muted', !voiceEnabled);
+  }
+}
+loadVoicePref();
+
+// 预热语音列表（部分浏览器异步加载）
+if(speechSynth){
+  speechSynth.getVoices();
+  if(speechSynth.onvoiceschanged !== undefined){
+    speechSynth.onvoiceschanged = function(){ /* 触发语音列表加载 */ };
+  }
+}
+
+// 首次用户交互时启动音频（浏览器/微信策略要求）
+// 微信内置浏览器需通过用户手势或 WeixinJSBridgeReady 事件解锁 AudioContext，
+// 否则进页面后始终处于 suspended 状态，导致 BGM/语音无声。
+var _audioUnlocked = false;
+function unlockAudio(){
+  if(_audioUnlocked) return;
+  initAudio();
+  if(AudioCtx && AudioCtx.state === 'suspended'){
+    // resume 可能返回 Promise；只有真正变为 running 才算解锁成功，
+    // 否则下次手势继续重试，避免「提前置真导致永久无声」。
+    var p = AudioCtx.resume();
+    if(p && p.then){
+      p.then(function(){ if(AudioCtx.state === 'running') _finishUnlock(); })
+       .catch(function(){});
+      return;
+    }
+    return; // 无 Promise：等下次手势再判断
+  }
+  if(AudioCtx && AudioCtx.state === 'running') _finishUnlock();
+}
+function _finishUnlock(){
+  if(audioEnabled && !bgmInterval) startBGM();
+  _audioUnlocked = true;
+}
+// 持续监听手势直到成功解锁，避免一次性监听在未生效时失效
+document.addEventListener('touchstart', unlockAudio, {passive: true});
+document.addEventListener('click', unlockAudio);
+// 微信专用：JSBridge 就绪后再次尝试解锁，提升兼容性
+document.addEventListener('WeixinJSBridgeReady', unlockAudio, false);
+
+// ==================== 全局配置 ====================
+var CONFIG = {
+  initialStats: { assets: 50000, alertness: 20, trust: 50 },
+  version: '1.0',
+  saveKey: 'rebirth_antifraud_save',
+  metaKey: 'rebirth_antifraud_meta',
+  rebirthAlertnessBonus: 5, // 每次重生额外+5警惕值
+  hintAfterRebirths: 2,     // 重生2次后显示提示
+};
+
+// ==================== 章节定义 ====================
+var CHAPTERS = [
+  { id:'ch1', title:'第一章', name:'刷单返利', startNode:'ch1_start', scamType:'刷单返利诈骗', difficulty:'★☆☆' },
+  { id:'ch2', title:'第二章', name:'冒充客服退款', startNode:'ch2_start', scamType:'冒充客服退款诈骗', difficulty:'★★☆' },
+  { id:'ch3', title:'第三章', name:'虚假投资理财', startNode:'ch3_start', scamType:'虚假投资理财诈骗', difficulty:'★★☆' },
+  { id:'ch4', title:'第四章', name:'网络贷款', startNode:'ch4_start', scamType:'网络贷款诈骗', difficulty:'★★★' },
+  { id:'ch5', title:'第五章', name:'游戏交易诈骗', startNode:'ch5_start', scamType:'游戏交易诈骗', difficulty:'★★★' },
+  { id:'ch6', title:'第六章', name:'裸聊敲诈', startNode:'ch6_start', scamType:'裸聊敲诈诈骗', difficulty:'★★★★' },
+  { id:'ch7', title:'第七章', name:'冒充公检法', startNode:'ch7_start', scamType:'冒充公检法诈骗', difficulty:'★★★★★' },
+  { id:'ch8', title:'第八章', name:'冒充客服取消会员', startNode:'ch8_start', scamType:'冒充客服取消会员诈骗', difficulty:'★★★☆' },
+  { id:'ch9', title:'第九章', name:'色情刷单', startNode:'ch9_start', scamType:'色情刷单诈骗', difficulty:'★★★★' },
+  { id:'ch10', title:'终章', name:'虚假投资网恋', startNode:'ch10_start', scamType:'虚假投资网恋诈骗', difficulty:'★★★★★' },
+];
+
+// ==================== 头像生成 ====================
+// AI生成的角色立绘 + SVG备用方案
+var _avatarImgLoaded = {};
+function avatarSVG(type){
+  // 系统头像用SVG盾牌
+  if(type === 'system'){
+    return '<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="40" fill="#2563eb"/><path d="M40 18 L58 26 L58 42 Q58 56 40 62 Q22 56 22 42 L22 26 Z" fill="#fff" opacity=".9"/><path d="M32 40 L38 46 L50 32" stroke="#2563eb" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+  // 其他角色用AI生成的PNG立绘
+  return '<img src="avatars/' + type + '.png" alt="' + type + '" onerror="this.outerHTML=this.dataset.fallback" data-fallback="' + svgFaceFallback(type).replace(/"/g,'&quot;') + '" style="width:100%;height:100%;object-fit:cover">';
+}
+// SVG备用头像（图片加载失败时使用）
+function svgFaceFallback(type){
+  var map = {
+    mc: svgFace('#2563eb','#fcd34d','#1e293b','short','determined','none'),
+    stranger: svgFace('#7c3aed','#fbbf24','#1e1b4b','short','smirk','none'),
+    service: svgFace('#0891b2','#fcd34d','#164e63','short','smile','headset'),
+    guru: svgFace('#d97706','#fde68a','#451a03','short','smirk','glasses'),
+    loaner: svgFace('#475569','#e2e8f0','#0f172a','short','neutral','none'),
+    buyer: svgFace('#ea580c','#fdba74','#431407','short','smile','none'),
+    prosecutor: svgFace('#1e3a5f','#d4a574','#0c1e3a','short','neutral','none'),
+    friend: svgFace('#16a34a','#fcd34d','#14532d','short','worried','none'),
+    police: svgFace('#1e40af','#e2e8f0','#0c1e3a','short','neutral','cap'),
+    service_scam: svgFace('#0d9488','#fcd34d','#134e4a','short','smirk','headset'),
+    porn_scam: svgFace('#db2777','#fbcfe8','#831843','long','smirk','none'),
+    romance_scam: svgFace('#6d28d9','#ddd6fe','#3b0764','long','smile','glasses'),
+    victim: svgFace('#475569','#fcd34d','#1e293b','short','worried','none'),
+  };
+  return map[type] || map.stranger;
+}
+
+function svgFace(bg, skin, hair, hairStyle, expr, acc){
+  var eyes = '<circle cx="33" cy="38" r="2.5" fill="#1e293b"/><circle cx="47" cy="38" r="2.5" fill="#1e293b"/>';
+  if(expr==='worried') eyes = '<path d="M30 36 Q33 38 36 36 M44 36 Q47 38 50 36" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="33" cy="38" r="2.5" fill="#1e293b"/><circle cx="47" cy="38" r="2.5" fill="#1e293b"/>';
+  var mouth = '';
+  if(expr==='smile') mouth='<path d="M33 48 Q40 53 47 48" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  else if(expr==='smirk') mouth='<path d="M33 50 Q40 48 47 46" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  else if(expr==='neutral') mouth='<line x1="35" y1="49" x2="45" y2="49" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>';
+  else if(expr==='worried') mouth='<path d="M34 50 Q40 46 46 50" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  else if(expr==='determined') mouth='<line x1="33" y1="48" x2="47" y2="48" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>';
+  var hairEl = '';
+  if(hairStyle==='short') hairEl='<path d="M22 34 Q40 14 58 34 L58 30 Q40 18 22 30 Z" fill="'+hair+'"/>';
+  if(hairStyle==='long') hairEl='<path d="M20 34 Q40 10 60 34 L62 56 L56 56 L56 36 Q40 24 24 36 L24 56 L18 56 Z" fill="'+hair+'"/><path d="M22 34 Q40 14 58 34 L58 30 Q40 18 22 30 Z" fill="'+hair+'"/>';
+  var accEl = '';
+  if(acc==='glasses') accEl='<rect x="27" y="34" width="10" height="8" rx="2" fill="none" stroke="#475569" stroke-width="1.5"/><rect x="43" y="34" width="10" height="8" rx="2" fill="none" stroke="#475569" stroke-width="1.5"/><line x1="37" y1="38" x2="43" y2="38" stroke="#475569" stroke-width="1.5"/>';
+  if(acc==='headset') accEl='<path d="M18 36 Q18 22 40 22 Q62 22 62 36" stroke="#64748b" stroke-width="2.5" fill="none"/><rect x="14" y="34" width="8" height="14" rx="3" fill="#64748b"/><rect x="58" y="34" width="8" height="14" rx="3" fill="#64748b"/>';
+  if(acc==='cap') accEl='<path d="M18 30 Q40 16 62 30 L62 26 Q40 14 18 26 Z" fill="#0c1e3a"/><rect x="18" y="28" width="44" height="4" fill="#0c1e3a"/><circle cx="40" cy="22" r="3" fill="#fbbf24"/>';
+  return '<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">'+
+    '<circle cx="40" cy="40" r="40" fill="'+bg+'"/>'+
+    '<ellipse cx="40" cy="44" rx="18" ry="22" fill="'+skin+'"/>'+
+    hairEl+eyes+mouth+accEl+'</svg>';
+}
+
+// ==================== 反诈知识图鉴 ====================
+var KNOWLEDGE = {
+  k1: {
+    type:'刷单返利诈骗', icon:'🛒',
+    desc:'骗子通过社交平台发布"刷单返利""点赞赚钱"等兼职广告，先给小额返利获取信任，再诱导大额垫付后失联。',
+    redFlags:['任何要求"垫付资金"的兼职都是诈骗','正规平台不会要求私下转账','"先甜后苦"是刷单诈骗的标准套路','刷单本身违反《反不正当竞争法》'],
+    advice:['不轻信"轻松赚钱"的兼职广告','不向陌生人转账任何金额','下载国家反诈中心APP，开启来电预警'],
+  },
+  k2: {
+    type:'冒充客服退款诈骗', icon:'🎧',
+    desc:'骗子冒充电商平台客服，称商品质量问题需退款，诱导受害者提供银行卡号、验证码，或点击钓鱼链接转账。',
+    redFlags:['正规退款原路退回，不需要提供银行卡','验证码是最后一道防线，绝不外泄','官方客服不会用私人手机号联系','退款不需要下载任何APP'],
+    advice:['退款只在原购物平台操作','任何索要验证码的都是骗子','拨打96110或官方客服核实'],
+  },
+  k3: {
+    type:'虚假投资理财诈骗', icon:'📈',
+    desc:'骗子通过社交平台添加好友，以"内幕消息""高收益"为诱饵，诱导在虚假平台投资，后台操控涨跌，提现时要求缴纳"税费"。',
+    redFlags:['年化收益超过8%就有风险，300%必是骗局','没有金融牌照的"导师"都是骗子','提现需要交"税""保证金"是典型诈骗','私人推荐的投资平台不可信'],
+    advice:['投资理财选择正规持牌机构','不信"内部渠道""稳赚不赔"','下载国家反诈中心APP识别诈骗软件'],
+  },
+  k4: {
+    type:'网络贷款诈骗', icon:'💰',
+    desc:'骗子以"无抵押、秒下款"为诱饵，在放款前以工本费、解冻费、保证金等名义收取各种费用，钱交了贷款永远不会到。',
+    redFlags:['正规贷款不会在放款前收取任何费用','"银行卡填写错误被冻结"是骗局','不需要抵押的贷款99%是诈骗','通过链接下载的贷款APP是假的'],
+    advice:['贷款选择银行或正规持牌机构','放款前收费的一律拒绝','不点击不明链接下载APP'],
+  },
+  k5: {
+    type:'游戏交易诈骗', icon:'🎮',
+    desc:'骗子在游戏社区发布买卖信息，诱导受害者到虚假交易平台，以"保证金""解冻金"等名义骗取钱财。',
+    redFlags:['非官方游戏交易平台不可信','交易需要"充值保证金"是诈骗','买家要求私下交易或指定平台要警惕','平台没有ICP备案的一律不碰'],
+    advice:['使用官方或大型正规交易平台','不在陌生平台充值任何"保证金"','交易前核实平台资质'],
+  },
+  k6: {
+    type:'裸聊敲诈诈骗', icon:'⚠️',
+    desc:'骗子以"美女"身份添加好友，诱导下载木马APP窃取通讯录，利用AI合成或录屏制造"把柄"，威胁发送给亲友进行敲诈。',
+    redFlags:['不下载来历不明的视频通话APP','对方发来的APP会窃取通讯录','"视频"可能是AI合成或纯诈骗','交钱只会被反复敲诈，不会收手'],
+    advice:['不下载不明APP，不进行视频裸聊','被敲诈不要给钱，交了还有下次','立即断网、卸载APP、修改密码','通知通讯录好友忽略骚扰信息','拨打96110报警'],
+  },
+  k7: {
+    type:'冒充公检法诈骗', icon:'⚖️',
+    desc:'骗子冒充公安、检察院、法院工作人员，称受害者涉嫌洗钱等犯罪，要求"配合调查"不得告诉他人，诱导转账至"安全账户"。',
+    redFlags:['公检法不会通过电话办案','公检法没有所谓的"安全账户"','要求"保密""不能告诉任何人"是诈骗标志','要求下载"安全防护APP"是木马软件','真正的警察会当面出示证件'],
+    advice:['公检法办案有正规法律程序','任何"安全账户"都是骗局','不下载所谓"安全防护APP"','立即挂断电话拨打96110核实','提醒家中老人，此类诈骗易针对中老年群体'],
+  },
+  k8: {
+    type:'冒充客服取消会员诈骗', icon:'📵',
+    desc:'骗子冒充平台客服，声称受害者开通了自动续费会员，需协助取消，诱导下载屏幕共享或远程操控软件，借机窃取银行卡密码和验证码，盗取资金。',
+    redFlags:['正规平台不会主动致电要求取消会员','任何要求下载屏幕共享软件的"客服"都是骗子','远程操控软件可直接控制你的手机','验证码、密码在屏幕共享下会被对方看到'],
+    advice:['不下载陌生人指定的远程操控或屏幕共享APP','自动续费在官方APP内自行管理','遇到"客服"来电，挂断后拨打96110或官方客服核实','手机安装国家反诈中心APP，开启来电预警'],
+  },
+  k9: {
+    type:'色情刷单诈骗', icon:'🚫',
+    desc:'骗子以提供色情服务为诱饵，要求受害者先完成刷单任务作为"门槛"，诱导持续转账刷单，再以任务未完成、需要补单等理由不断骗钱，色情服务根本不存在。',
+    redFlags:['以色情服务为诱饵要求刷单100%是诈骗','"完成任务才能见面"是标准话术','持续要求转账补单是无限循环骗局','色情服务本身不合法，对方利用羞耻心理实施诈骗'],
+    advice:['不浏览不良信息，不寻求色情服务','任何要求转账才能"见面"的都是骗局','被诈骗后不要因羞耻而沉默，立即报警','拨打96110举报，警方依法保护隐私'],
+  },
+  k10: {
+    type:'虚假投资网恋诈骗', icon:'💔',
+    desc:'骗子通过交友平台与受害者发展恋爱关系，取得信任后编造"内部高收益投资渠道"，诱导持续投入资金，初期可小额提现，加大投入后平台无法提现，骗子消失。',
+    redFlags:['网恋对象推荐投资平台100%是诈骗','"内部渠道""稳赚不赔"是投资诈骗标配','初期小额提现是为了诱导大额投入','对方拒绝视频通话、见面必有蹊跷'],
+    advice:['网恋对象推荐投资一律拒绝','投资选择正规持牌金融机构','不下载陌生人推荐的理财APP','下载国家反诈中心APP识别虚假投资平台','遇到可疑情况拨打96110咨询'],
+  },
+};
+
+// ==================== 成就列表 ====================
+var ACHIEVEMENTS = {
+  a1: { icon:'🔄', name:'初次重生', desc:'第一次经历重生' },
+  a2: { icon:'👁️', name:'火眼金睛', desc:'识破第一个骗局' },
+  a3: { icon:'⚔️', name:'以牙还牙·初战', desc:'第一次成功反击骗子' },
+  a4: { icon:'⚡', name:'连环反击', desc:'成功反击3次以上' },
+  a5: { icon:'👑', name:'反诈大师', desc:'所有骗局都成功反击' },
+  a6: { icon:'✨', name:'完美轮回', desc:'全程无重生通关' },
+  a7: { icon:'📖', name:'反诈图鉴', desc:'解锁全部反诈知识' },
+  a8: { icon:'💎', name:'守财有道', desc:'通关时资产≥50000' },
+  a9: { icon:'🔮', name:'轮回大师', desc:'经历5次重生' },
+  a10:{ icon:'🛡️', name:'反诈先锋', desc:'完成全部10个章节' },
+};
+
+// ==================== 游戏状态 ====================
+var game = {
+  node: 'prologue_01',
+  chapter: -1, // -1=序章, 0-9=对应章节
+  stats: {},
+  rebirthCount: 0,
+  chapterRebirths: {},
+  unlockedKnowledge: [],
+  unlockedAchievements: [],
+  completedChapters: [],
+  counterCount: 0,
+  checkpointStats: null,
+  gameCompleted: false,
+};
+// 元数据（跨存档保留）
+var meta = {
+  totalRebirths: 0,
+  unlockedKnowledge: [],
+  unlockedAchievements: [],
+  gameCompleted: false,
+};
+
+// ==================== 存档系统 ====================
+function saveGame(){
+  var data = {
+    version: CONFIG.version,
+    node: game.node,
+    chapter: game.chapter,
+    stats: game.stats,
+    rebirthCount: game.rebirthCount,
+    chapterRebirths: game.chapterRebirths,
+    unlockedKnowledge: game.unlockedKnowledge,
+    unlockedAchievements: game.unlockedAchievements,
+    completedChapters: game.completedChapters,
+    counterCount: game.counterCount,
+    checkpointStats: game.checkpointStats,
+    gameCompleted: game.gameCompleted,
+  };
+  try{ localStorage.setItem(CONFIG.saveKey, JSON.stringify(data)); }catch(e){}
+}
+function saveMeta(){
+  try{ localStorage.setItem(CONFIG.metaKey, JSON.stringify(meta)); }catch(e){}
+}
+function loadGame(){
+  try{
+    var s = localStorage.getItem(CONFIG.saveKey);
+    if(!s) return false;
+    var d = JSON.parse(s);
+    if(d.version !== CONFIG.version){ localStorage.removeItem(CONFIG.saveKey); return false; }
+    game.node = d.node; game.chapter = d.chapter; game.stats = d.stats;
+    game.rebirthCount = d.rebirthCount||0; game.chapterRebirths = d.chapterRebirths||{};
+    game.unlockedKnowledge = d.unlockedKnowledge||[]; game.unlockedAchievements = d.unlockedAchievements||[];
+    game.completedChapters = d.completedChapters||[]; game.counterCount = d.counterCount||0;
+    game.checkpointStats = d.checkpointStats; game.gameCompleted = d.gameCompleted||false;
+    return true;
+  }catch(e){ return false; }
+}
+function loadMeta(){
+  try{
+    var s = localStorage.getItem(CONFIG.metaKey);
+    if(!s) return;
+    var d = JSON.parse(s);
+    meta.totalRebirths = d.totalRebirths||0;
+    meta.unlockedKnowledge = d.unlockedKnowledge||[];
+    meta.unlockedAchievements = d.unlockedAchievements||[];
+    meta.gameCompleted = d.gameCompleted||false;
+  }catch(e){}
+}
+function hasSave(){
+  try{ return !!localStorage.getItem(CONFIG.saveKey); }catch(e){ return false; }
+}
+function clearSave(){
+  try{ localStorage.removeItem(CONFIG.saveKey); }catch(e){}
+}
+
+// ==================== 剧情节点数据 ====================
+// 以下为全部剧情节点，按章节组织
+// 修改/新增骗局剧情只需在此添加节点即可
+
+var STORY = {
+
+// ════════════════════════════════════════
+// 序章 — 重生觉醒
+// ════════════════════════════════════════
+prologue_01: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'又是这个早晨。\n手机屏幕亮起，一条好友申请：兼职小助手。\n\n——上一世，一切就是从这里开始的。',
+  choices:[{ text:'继续', next:'prologue_02' }]
+},
+prologue_02: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'上一世的记忆如潮水般涌来。\n\n刷单返利、客服退款、投资理财……\n一个接一个的圈套，把我的积蓄一点点榨干。\n到最后，负债累累，众叛亲离。',
+  choices:[{ text:'继续', next:'prologue_03' }]
+},
+prologue_03: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'我记得每一个骗子的套路。\n记得每一个致命的选择。\n记得每一次后悔莫及的瞬间。',
+  choices:[{ text:'继续', next:'prologue_04' }]
+},
+prologue_04: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'但这一次不一样了。\n\n上天给了我重来一次的机会。\n这一次——\n<span class="em">我不会再上当。</span>\n<span class="gold">那些骗子，该还回来了。</span>',
+  choices:[{ text:'以牙还牙，开始！', next:'prologue_05', tipClass:'counter' }]
+},
+prologue_05: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【系统】重生成功。\n当前资产：¥50,000\n警惕值：20\n\n记住：遇到可疑情况，拨打96110。',
+  choices:[{ text:'进入第一章', next:'ch1_start', chapter:0 }]
+},
+
+// ════════════════════════════════════════
+// 第一章：刷单返利诈骗（难度★☆☆ 教程）
+// ════════════════════════════════════════
+ch1_start: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'手机震了一下。社交软件弹出一条消息。\n\n——来了。上一世，我就是点开了这条消息，坠入了深渊。\n但这次，我准备好了。',
+  choices:[{ text:'查看消息', next:'ch1_01' }]
+},
+ch1_01: {
+  scene:'chat', speaker:'兼职小助手', avatar:'stranger',
+  messages:[
+    {from:'other', text:'你好呀~看你朋友圈发的，最近在找工作？😊'},
+    {from:'other', text:'我这有个超轻松的兼职，在家用手机就能做，每天轻松赚几十上百的~要不要试试？'},
+  ],
+  choices:[
+    { text:'什么兼职？说来听听', next:'ch1_02', effects:{alertness:-3,trust:5}, tip:'好奇心让你放松了警惕', tipType:'danger' },
+    { text:'天上不会掉馅饼，不用了', next:'ch1_refuse', effects:{alertness:8}, tip:'保持警惕是正确的！', tipType:'success', tipClass:'correct' },
+    { text:'有意思，我了解一下', next:'ch1_02', effects:{alertness:5,trust:10}, requires:{alertness:30}, tip:'准备将计就计？', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch1_02: {
+  scene:'chat', speaker:'兼职小助手', avatar:'stranger',
+  messages:[
+    {from:'other', text:'就是帮商家刷销量啦~你先垫付50块，任务完成后返还本金+10块佣金。超简单！'},
+    {from:'other', text:'看我的收益截图~大家都赚到钱了👇'},
+  ],
+  choices:[
+    { text:'才50块，我试试', next:'ch1_03', effects:{trust:10,assets:60}, tip:'赚到了10块……但陷阱才刚开始', tipType:'danger' },
+    { text:'垫付返利？这不是刷单骗局吗？', next:'ch1_identify', effects:{alertness:12}, tip:'识破骗局！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch1_03: {
+  scene:'chat', speaker:'兼职小助手', avatar:'stranger',
+  messages:[
+    {from:'other', text:'看到没？60块到账了！说到做到~😊'},
+    {from:'other', text:'现在有个大单，垫2000返2600！佣金600块！手慢无~'},
+  ],
+  choices:[
+    { text:'来！2000就2000！', next:'ch1_04', effects:{trust:15}, tip:'贪心了……', tipType:'danger', tipClass:'danger' },
+    { text:'先给甜头再骗大的，老套路了', next:'ch1_identify', effects:{alertness:15}, tip:'及时醒悟！', tipType:'success', tipClass:'correct' },
+    { text:'行，我转', next:'ch1_counter1', effects:{alertness:8,trust:20,assets:-2000}, requires:{alertness:40}, tip:'准备收集证据反击！', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch1_04: {
+  scene:'transfer', speaker:'转账页面', avatar:'system',
+  text:'收款方：兼职小助手\n转账金额：¥2,000\n备注：刷单任务垫付款',
+  warning:'⚠ 警告：向陌生人转账有风险！正规兼职不需要垫付资金。',
+  choices:[
+    { text:'确认转账', next:'ch1_05', effects:{assets:-2000}, tip:'2000元转出去了……', tipType:'danger' },
+    { text:'取消，这是骗局！', next:'ch1_identify', effects:{alertness:15}, tip:'悬崖勒马！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch1_05: {
+  scene:'chat', speaker:'兼职小助手', avatar:'stranger',
+  messages:[
+    {from:'other', text:'收到啦~但系统提示你操作异常，需要再转5000元解冻才能提现哦'},
+    {from:'other', text:'放心，解冻后2000+5000+佣金一起返还给你！'},
+  ],
+  choices:[
+    { text:'什么？再转5000……', next:'ch1_bad', effects:{assets:-5000}, tip:'连环套！你已经上钩了！', tipType:'danger', tipClass:'danger' },
+    { text:'不对！这是连环骗局！', next:'ch1_identify_late', effects:{alertness:10}, tip:'终于醒悟了，但钱已经损失了', tipType:'danger' },
+  ]
+},
+ch1_refuse: {
+  scene:'chat', speaker:'兼职小助手', avatar:'stranger',
+  messages:[
+    {from:'self', text:'不用了，我不信天上掉馅饼的事。'},
+    {from:'other', text:'唉，机会不等人啊~'},
+  ],
+  choices:[
+    { text:'拉黑举报', next:'ch1_end_safe', effects:{alertness:5}, tip:'明智的选择', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch1_identify: {
+  scene:'chat', speaker:'兼职小助手', avatar:'stranger',
+  messages:[
+    {from:'self', text:'我知道你在干什么。先给甜头再骗大的，这就是刷单诈骗。'},
+    {from:'other', text:'你……你怎么知道的？'},
+    {from:'other', text:'（对方已将你拉黑）'},
+  ],
+  choices:[
+    { text:'截图保留证据，已举报', next:'ch1_end_identify', effects:{alertness:5}, unlockKnowledge:'k1', unlockAchievement:'a2', tip:'识破骗局，解锁反诈知识！', tipType:'success', tipClass:'correct' },
+    { text:'等等，让我收集更多证据', next:'ch1_counter1', effects:{alertness:5,trust:15}, requires:{alertness:40}, tip:'准备反击！', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch1_identify_late: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'虽然识破了骗局，但2000块钱已经转出去了。\n\n这次教训深刻。\n<span class="danger">还好没有继续转5000。</span>',
+  choices:[
+    { text:'报警并保留证据', next:'ch1_end_late', effects:{alertness:5}, unlockKnowledge:'k1', tip:'亡羊补牢，为时未晚', tipType:'danger' },
+  ]
+},
+ch1_counter1: {
+  scene:'chat', speaker:'兼职小助手', avatar:'stranger',
+  messages:[
+    {from:'self', text:'好的我转，你把你的刷单平台链接和收款账户发我看看。'},
+    {from:'other', text:'好嘞！这是平台链接，这是收款码~快转吧！'},
+    {from:'self', text:'（截图保存。平台域名、收款账户、聊天记录，证据齐了。）'},
+  ],
+  choices:[
+    { text:'证据确凿，拨打96110！', next:'ch1_end_counter', effects:{alertness:10}, unlockKnowledge:'k1', counter:true, tip:'以牙还牙！反击成功！', tipType:'gold', tipClass:'counter' },
+    { text:'再套点信息', next:'ch1_counter2', effects:{trust:10}, tip:'继续收集证据……', tipType:'gold' },
+  ]
+},
+ch1_counter2: {
+  scene:'chat', speaker:'兼职小助手', avatar:'stranger',
+  messages:[
+    {from:'self', text:'你们还有什么大单吗？我想多赚点。'},
+    {from:'other', text:'有有有！你先把这个转了，还有个5000的大单等着你！'},
+    {from:'other', text:'（开始催促转账，语气急切）'},
+  ],
+  choices:[
+    { text:'够了，96110！', next:'ch1_end_counter', effects:{alertness:8}, unlockKnowledge:'k1', counter:true, tip:'及时反击成功！', tipType:'gold', tipClass:'counter' },
+    { text:'再等等……', next:'ch1_bad', rebirth:true, tip:'骗子起了疑心，卷款跑路了！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch1_end_safe: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第一章完成 — 安全拒绝】\n你果断拒绝了刷单兼职，保护了财产安全。\n\n虽然错过了一次反击的机会，但安全第一。\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_01', effects:{alertness:5}, unlockKnowledge:'k1' }]
+},
+ch1_end_identify: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第一章完成 — 识破骗局】\n你识破了刷单诈骗，保留了证据并举报。\n\n骗子拉黑了你，但你的警觉性大大提升。\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_01', effects:{alertness:8} }]
+},
+ch1_end_counter: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第一章完成 — 以牙还牙！】\n你将计就计收集了骗子的平台链接和收款账户证据，\n拨打96110举报，警方迅速冻结了骗子的账户！\n\n被骗的2000元成功追回，骗子被绳之以法！\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_01', effects:{alertness:10,assets:2000} }]
+},
+ch1_end_late: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第一章完成 — 亡羊补牢】\n虽然损失了2000元，但你及时止损并报警。\n\n教训深刻，警惕性有所提升。\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_01', effects:{alertness:5} }]
+},
+ch1_bad: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'7000块钱……全没了。\n上一世就是这样，一环扣一环，直到倾家荡产。\n\n<span class="danger">不……我不能就这样认输。</span>\n\n<span class="gold">再重来一次！</span>',
+  choices:[{ text:'重生', next:'rebirth', rebirth:true }]
+},
+
+// ════════════════════════════════════════
+// 第二章：冒充客服退款诈骗（难度★★☆）
+// ════════════════════════════════════════
+ch2_start: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'刚处理完刷单的事，手机又响了。\n来电显示：XX商城客服。\n\n上一世，我就是接了这个电话，\n把验证码报给了对方，卡里的两万块瞬间蒸发。',
+  choices:[{ text:'接听', next:'ch2_01' }]
+},
+ch2_01: {
+  scene:'call', speaker:'XX商城客服', avatar:'service',
+  caller:'XX商城客服', number:'4006-XX8-901',
+  text:'您好，我是XX商城客服。您近期购买的商品存在质量问题，我们为您办理退款补偿。请您提供一下银行卡号，我们好为您打款。',
+  choices:[
+    { text:'好的，我找一下卡', next:'ch2_02', effects:{alertness:-5,trust:10}, tip:'不要轻易提供银行卡信息', tipType:'danger' },
+    { text:'退款不是原路退回吗？', next:'ch2_03', effects:{alertness:8}, tip:'质疑得对！', tipType:'success', tipClass:'correct' },
+    { text:'我先在APP里查查订单', next:'ch2_03', effects:{alertness:10}, tip:'自己去核实是最安全的', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch2_02: {
+  scene:'call', speaker:'XX商城客服', avatar:'service',
+  caller:'XX商城客服', number:'4006-XX8-901',
+  text:'好的不急。另外为了确认是本人操作，\n请把手机收到的<span class="danger">验证码</span>告诉我。',
+  choices:[
+    { text:'验证码我看看手机……', next:'ch2_bad', effects:{assets:-20000}, rebirth:true, tip:'验证码给出去了！资金瞬间被转走！', tipType:'danger', tipClass:'danger' },
+    { text:'等等！验证码不能给你！', next:'ch2_03', effects:{alertness:15}, tip:'关键时刻醒悟！', tipType:'success', tipClass:'correct' },
+    { text:'怎么感觉不对劲……', next:'ch2_03', effects:{alertness:12}, tip:'保持怀疑是正确的', tipType:'success' },
+  ]
+},
+ch2_03: {
+  scene:'call', speaker:'XX商城客服', avatar:'service',
+  caller:'XX商城客服', number:'4006-XX8-901',
+  text:'先生/女士，不配合的话我们只能自动扣款了！\n请尽快提供银行卡和验证码，否则后果自负！',
+  choices:[
+    { text:'别吓我，我打官方客服核实', next:'ch2_identify', effects:{alertness:12}, tip:'正确！通过官方渠道核实', tipType:'success', tipClass:'correct' },
+    { text:'那……那我配合', next:'ch2_02', effects:{trust:15,alertness:-8}, tip:'被吓住了……', tipType:'danger' },
+    { text:'好的我配合，把退款链接发我', next:'ch2_counter1', effects:{alertness:8,trust:20}, requires:{alertness:40}, tip:'准备反击！', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch2_counter1: {
+  scene:'chat', speaker:'XX商城客服', avatar:'service',
+  messages:[
+    {from:'other', text:'这是退款链接，点击填写银行卡和验证码即可~'},
+    {from:'self', text:'（网址是假的，域名都不对。截图保存。）'},
+    {from:'self', text:'（假客服号码、钓鱼链接、聊天记录，证据齐了。）'},
+  ],
+  choices:[
+    { text:'证据够了，96110！', next:'ch2_end_counter', effects:{alertness:10}, unlockKnowledge:'k2', counter:true, tip:'以牙还牙！', tipType:'gold', tipClass:'counter' },
+    { text:'这链接域名都不对，假的！', next:'ch2_identify', effects:{alertness:15}, tip:'识破了钓鱼链接！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch2_identify: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'挂掉电话，我拨打了官方客服。\n\n"您没有退款记录，那个4006号码不是我们的。"\n\n果然是骗子。我截图保留了通话记录和钓鱼链接，提交给了96110。',
+  choices:[
+    { text:'继续', next:'ch2_end_identify', effects:{alertness:8}, unlockKnowledge:'k2', tip:'识破骗局！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch2_bad: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'验证码报出去的瞬间，手机弹出短信：\n"您尾号XXXX的卡支出20,000元。"\n\n卡里的钱……全没了。\n上一世的噩梦重演了。\n\n<span class="gold">不行，重来！</span>',
+  choices:[{ text:'重生', next:'rebirth', rebirth:true }]
+},
+ch2_end_counter: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第二章完成 — 以牙还牙！】\n你假装配合，收集了假客服号码和钓鱼链接证据，\n拨打96110举报，警方顺藤摸瓜捣毁了诈骗窝点！\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_02', effects:{alertness:10} }]
+},
+ch2_end_identify: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第二章完成 — 识破骗局】\n你通过官方渠道核实，识破了冒充客服退款诈骗。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_02', effects:{alertness:8} }]
+},
+
+// ════════════════════════════════════════
+// 第三章：虚假投资理财诈骗（难度★★☆）
+// ════════════════════════════════════════
+ch3_start: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'社交软件弹出好友申请：投资导师-陈老师。\n\n上一世，这个"陈老师"给我看了无数张"收益截图"，\n最后骗走了我五万块积蓄。\n\n这次，我要让他付出代价。',
+  choices:[{ text:'通过好友申请', next:'ch3_01' }]
+},
+ch3_01: {
+  scene:'chat', speaker:'投资导师-陈老师', avatar:'guru',
+  messages:[
+    {from:'other', text:'你好，我是专业投资分析师陈老师'},
+    {from:'other', text:'我这边有个内部投资渠道，年化收益300%💎'},
+    {from:'other', text:'看看我上周的收益，入金5万，一周到账15万👇'},
+  ],
+  choices:[
+    { text:'300%？太夸张了吧', next:'ch3_02', effects:{alertness:8}, tip:'保持怀疑是对的！', tipType:'success', tipClass:'correct' },
+    { text:'怎么操作？教教我', next:'ch3_03', effects:{trust:10,alertness:-5}, tip:'被高收益冲昏了头……', tipType:'danger' },
+    { text:'这么厉害？我入点', next:'ch3_03', effects:{alertness:5,trust:15}, requires:{alertness:40}, tip:'准备将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch3_02: {
+  scene:'chat', speaker:'投资导师-陈老师', avatar:'guru',
+  messages:[
+    {from:'self', text:'300%年化？这不可能吧。'},
+    {from:'other', text:'你不信？看这个账户，实时可查！入金1万当天就能看到涨！'},
+    {from:'other', text:'名额有限，内部通道，过了这村没这店~'},
+  ],
+  choices:[
+    { text:'真能赚这么多？试试', next:'ch3_03', effects:{trust:8,alertness:-3}, tip:'还是被诱惑了……', tipType:'danger' },
+    { text:'你这是什么平台？有牌照吗？', next:'ch3_identify', effects:{alertness:12}, tip:'质疑平台资质是正确的！', tipType:'success', tipClass:'correct' },
+    { text:'让我试试看', next:'ch3_03', effects:{alertness:5,trust:20}, requires:{alertness:50}, tip:'将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch3_03: {
+  scene:'chat', speaker:'投资导师-陈老师', avatar:'guru',
+  messages:[
+    {from:'other', text:'来！注册这个平台，入金就行~'},
+    {from:'other', text:'先入1万试试水，明天就能看到收益！'},
+  ],
+  choices:[
+    { text:'先入1万试试', next:'ch3_04', effects:{assets:-10000,trust:15}, tip:'钱转出去了……', tipType:'danger', tipClass:'danger' },
+    { text:'等等，这平台查不到', next:'ch3_identify', effects:{alertness:15}, tip:'核实平台是对的！', tipType:'success', tipClass:'correct' },
+    { text:'好的，我注册看看', next:'ch3_counter1', effects:{alertness:8,trust:20}, requires:{alertness:45}, tip:'准备收集证据', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch3_04: {
+  scene:'popup', speaker:'投资平台APP', avatar:'guru',
+  text:'账户余额：¥12,500\n今日收益：+¥2,500\n累计收益率：+25%',
+  warning:'⚠ 警告：虚假投资平台可后台操控数据！',
+  voice:'哈哈，看到没有？一天就能赚两千五！跟着我投，保证你翻倍！',
+  choices:[
+    { text:'涨了！再入5万！', next:'ch3_bad', effects:{assets:-50000}, rebirth:true, tip:'贪心是最大的陷阱！', tipType:'danger', tipClass:'danger' },
+    { text:'能提现吗？试试看', next:'ch3_05', effects:{alertness:5}, tip:'试试提现是对的', tipType:'success' },
+    { text:'等等…这是不是假平台？', next:'ch3_identify_late', effects:{alertness:10}, tip:'终于醒悟了', tipType:'danger' },
+  ]
+},
+ch3_05: {
+  scene:'chat', speaker:'投资导师-陈老师', avatar:'guru',
+  messages:[
+    {from:'self', text:'我想提现。'},
+    {from:'other', text:'提现需要先缴纳20%的个人所得税哦~'},
+    {from:'other', text:'交完税就可以全额提现了，这是规定~'},
+  ],
+  choices:[
+    { text:'交税就交税', next:'ch3_bad', effects:{assets:-10000}, rebirth:true, tip:'又是一个骗局！', tipType:'danger', tipClass:'danger' },
+    { text:'提现还要交税？骗局！', next:'ch3_identify_late', effects:{alertness:12}, tip:'识破了连环套！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch3_identify: {
+  scene:'chat', speaker:'投资导师-陈老师', avatar:'guru',
+  messages:[
+    {from:'self', text:'你的平台有金融牌照吗？在证监会查不到。'},
+    {from:'other', text:'……你是行家啊。'},
+    {from:'other', text:'（对方已将你拉黑）'},
+  ],
+  choices:[
+    { text:'截图举报', next:'ch3_end_identify', effects:{alertness:8}, unlockKnowledge:'k3', tip:'识破投资骗局！', tipType:'success', tipClass:'correct' },
+    { text:'等等，继续套他信息', next:'ch3_counter1', effects:{alertness:5,trust:15}, requires:{alertness:45}, tip:'准备反击', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch3_identify_late: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'虽然损失了1万块，但好在没有继续交"税费"。\n\n虚假投资平台，后台操控涨跌，提现时收各种费用……\n这就是经典的投资诈骗套路。',
+  choices:[
+    { text:'报警止损', next:'ch3_end_late', effects:{alertness:5}, unlockKnowledge:'k3', tip:'及时止损', tipType:'danger' },
+  ]
+},
+ch3_counter1: {
+  scene:'chat', speaker:'投资导师-陈老师', avatar:'guru',
+  messages:[
+    {from:'self', text:'行，我入。把平台注册链接发我。'},
+    {from:'other', text:'好！这是链接~ 快注册！'},
+    {from:'self', text:'（截图：假平台链接、假收益截图、收款账户。证据+1）'},
+    {from:'self', text:'陈老师，你上级是谁？能带带我吗？'},
+    {from:'other', text:'可以！我拉你进内部群~'},
+  ],
+  choices:[
+    { text:'证据够了，96110！', next:'ch3_end_counter', effects:{alertness:10,assets:10000}, unlockKnowledge:'k3', counter:true, tip:'以牙还牙！追回损失！', tipType:'gold', tipClass:'counter' },
+    { text:'再套套上级信息', next:'ch3_counter2', effects:{trust:10}, tip:'继续深挖……', tipType:'gold' },
+  ]
+},
+ch3_counter2: {
+  scene:'chat', speaker:'投资导师-陈老师', avatar:'guru',
+  messages:[
+    {from:'other', text:'来了！这是我们内部群的二维码~'},
+    {from:'self', text:'（截图：诈骗群二维码、上级"导师"信息。证据+1）'},
+    {from:'other', text:'你还没入金？快入金啊，再不入就晚了！'},
+  ],
+  choices:[
+    { text:'完美收网，96110！', next:'ch3_end_counter', effects:{alertness:12,assets:10000}, unlockKnowledge:'k3', counter:true, tip:'以牙还牙！人赃并获！', tipType:'gold', tipClass:'counter' },
+    { text:'再拖一会', next:'ch3_bad', rebirth:true, tip:'骗子起了疑心，跑路了！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch3_end_counter: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第三章完成 — 以牙还牙！】\n你假装入金，收集了假平台链接、假收益截图、\n诈骗群二维码和"导师"身份信息，\n拨打96110举报，警方跨省抓捕了诈骗团伙！\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_03', effects:{alertness:10} }]
+},
+ch3_end_identify: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第三章完成 — 识破骗局】\n你识破了虚假投资理财诈骗，举报了假平台。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_03', effects:{alertness:8} }]
+},
+ch3_end_late: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第三章完成 — 亡羊补牢】\n损失1万元，但及时止损并报警。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_03', effects:{alertness:5} }]
+},
+ch3_bad: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'五万块积蓄……全投进去了。\n平台显示"维护中"，客服失联。\n上一世就是这样，血本无归。\n\n<span class="gold">不能就这样结束……重来！</span>',
+  choices:[{ text:'重生', next:'rebirth', rebirth:true }]
+},
+
+// ════════════════════════════════════════
+// 第四章：网络贷款诈骗（难度★★★）
+// ════════════════════════════════════════
+ch4_start: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'朋友小杰打来电话，说急需用钱，\n在网上找到一个"无抵押秒下款"的贷款APP。\n\n上一世，小杰就是被这种"贷款"骗光了积蓄——\n工本费、解冻费、保险费……名目繁多，直到掏空。',
+  choices:[{ text:'查看小杰的消息', next:'ch4_01' }]
+},
+ch4_01: {
+  scene:'chat', speaker:'小杰', avatar:'friend',
+  messages:[
+    {from:'other', text:'哥！我找到一个贷款APP，不用抵押，秒下款5万！'},
+    {from:'other', text:'你帮我看看靠谱不？我急用钱啊'},
+  ],
+  choices:[
+    { text:'不用抵押？先让我查查', next:'ch4_02', effects:{alertness:8}, tip:'谨慎核实是对的', tipType:'success', tipClass:'correct' },
+    { text:'天上掉馅饼的事别信', next:'ch4_identify', effects:{alertness:10}, tip:'直接判断是骗局', tipType:'success', tipClass:'correct' },
+    { text:'我帮你问问', next:'ch4_02', effects:{alertness:5,trust:10}, requires:{alertness:40}, tip:'准备帮朋友反击', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch4_02: {
+  scene:'chat', speaker:'贷款专员-王经理', avatar:'loaner',
+  messages:[
+    {from:'other', text:'您好，贷款已预审通过，额度5万🎉'},
+    {from:'other', text:'需缴纳2000元工本费即可放款，放款后退还~'},
+  ],
+  choices:[
+    { text:'先交钱才能贷款？', next:'ch4_03', effects:{alertness:12}, tip:'质疑前期费用是对的！', tipType:'success', tipClass:'correct' },
+    { text:'2000不多，交了吧', next:'ch4_04', effects:{assets:-2000,trust:10}, tip:'不该交钱……', tipType:'danger', tipClass:'danger' },
+    { text:'好的，怎么交？', next:'ch4_counter1', effects:{alertness:8,trust:15}, requires:{alertness:45}, tip:'准备收集证据', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch4_03: {
+  scene:'chat', speaker:'贷款专员-王经理', avatar:'loaner',
+  messages:[
+    {from:'other', text:'这是正规流程！工本费放款后全额退还'},
+    {from:'other', text:'不交无法放款，这是银行规定~'},
+  ],
+  choices:[
+    { text:'正规贷款不收前期费用！', next:'ch4_identify', effects:{alertness:15}, tip:'正确！正规贷款不收前期费', tipType:'success', tipClass:'correct' },
+    { text:'那…那交吧', next:'ch4_04', effects:{assets:-2000}, tip:'不该交……', tipType:'danger' },
+    { text:'行，我交。合同发我看看', next:'ch4_counter1', effects:{alertness:5,trust:20}, requires:{alertness:50}, tip:'将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch4_04: {
+  scene:'chat', speaker:'贷款专员-王经理', avatar:'loaner',
+  messages:[
+    {from:'other', text:'收到工本费~ 但您银行卡号填写有误，账户被冻结了'},
+    {from:'other', text:'需缴纳5000元解冻费才能放款'},
+  ],
+  choices:[
+    { text:'又交钱？？', next:'ch4_05', effects:{alertness:10}, tip:'连环收费！警惕！', tipType:'danger' },
+    { text:'解冻就解冻，我交', next:'ch4_bad', effects:{assets:-5000}, rebirth:true, tip:'连环套！越交越多！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch4_05: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'工本费、解冻费……名目越来越多。\n这就是网络贷款诈骗的经典套路：\n在放款前以各种名义收费，永远不会真正放款。',
+  choices:[
+    { text:'这是连环收费骗局！', next:'ch4_identify_late', effects:{alertness:12}, tip:'终于醒悟了', tipType:'danger' },
+  ]
+},
+ch4_counter1: {
+  scene:'chat', speaker:'贷款专员-王经理', avatar:'loaner',
+  messages:[
+    {from:'self', text:'好的我交。你把贷款合同和APP下载链接发我。'},
+    {from:'other', text:'这是合同模板，这是APP下载链接~'},
+    {from:'self', text:'（截图：假合同、假APP链接、收款账户。证据齐了。）'},
+  ],
+  choices:[
+    { text:'证据够了，96110！', next:'ch4_end_counter', effects:{alertness:10}, unlockKnowledge:'k4', counter:true, tip:'以牙还牙！', tipType:'gold', tipClass:'counter' },
+    { text:'再套套他们的APP信息', next:'ch4_counter2', effects:{trust:10}, tip:'继续深挖', tipType:'gold' },
+  ]
+},
+ch4_counter2: {
+  scene:'chat', speaker:'贷款专员-王经理', avatar:'loaner',
+  messages:[
+    {from:'self', text:'你们公司叫什么？有金融牌照吗？'},
+    {from:'other', text:'我们是XX金融！当然有牌照！'},
+    {from:'self', text:'（截图：虚假公司名、假牌照信息。证据+1）'},
+  ],
+  choices:[
+    { text:'收网，96110！', next:'ch4_end_counter', effects:{alertness:8}, unlockKnowledge:'k4', counter:true, tip:'以牙还牙！', tipType:'gold', tipClass:'counter' },
+    { text:'下载APP看看', next:'ch4_bad', rebirth:true, tip:'APP是木马！窃取了银行信息！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch4_identify: {
+  scene:'chat', speaker:'小杰', avatar:'friend',
+  messages:[
+    {from:'self', text:'小杰，别信！正规贷款不会在放款前收任何费用。'},
+    {from:'other', text:'真的吗？还好问了你！'},
+    {from:'other', text:'那我去哪贷款啊？'},
+    {from:'self', text:'去银行或正规持牌机构，别碰网上的"无抵押秒下款"。'},
+  ],
+  choices:[
+    { text:'帮小杰举报这个假贷款APP', next:'ch4_end_identify', effects:{alertness:8}, unlockKnowledge:'k4', tip:'帮朋友避坑！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch4_identify_late: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'虽然小杰损失了2000元，但好在没有继续交"解冻费"。\n\n网络贷款诈骗的核心就是：放款前以各种名义收费，永远不放款。',
+  choices:[
+    { text:'报警止损', next:'ch4_end_late', effects:{alertness:5}, unlockKnowledge:'k4', tip:'亡羊补牢', tipType:'danger' },
+  ]
+},
+ch4_end_counter: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第四章完成 — 以牙还牙！】\n你假装申请贷款，收集了假合同、假APP链接、\n虚假公司信息和收款账户证据，\n拨打96110举报，警方端掉了假贷款平台！\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_04', effects:{alertness:10} }]
+},
+ch4_end_identify: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第四章完成 — 识破骗局】\n你帮朋友识破了网络贷款诈骗，避免了财产损失。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_04', effects:{alertness:8} }]
+},
+ch4_end_late: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第四章完成 — 亡羊补牢】\n小杰损失2000元，但及时止损并报警。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_04', effects:{alertness:5} }]
+},
+ch4_bad: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'工本费、解冻费、保险费、保证金……\n一个接一个，小杰的钱被掏空了。\n\n我没能保护好朋友。\n<span class="gold">重来，这次一定要帮他！</span>',
+  choices:[{ text:'重生', next:'rebirth', rebirth:true }]
+},
+
+// ════════════════════════════════════════
+// 第五章：游戏交易诈骗（难度★★★）
+// ════════════════════════════════════════
+ch5_start: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'表弟打来电话，说有人出2000块买他的游戏账号，\n但要在一个叫"游戏交易网"的平台交易。\n\n上一世，表弟在这个假平台充了2000"保证金"，\n然后被对方拉黑，号也没了。',
+  choices:[{ text:'查看表弟消息', next:'ch5_01' }]
+},
+ch5_01: {
+  scene:'chat', speaker:'表弟', avatar:'friend',
+  messages:[
+    {from:'other', text:'哥！有人出2000买我的游戏号！'},
+    {from:'other', text:'但他让我去一个叫"游戏交易网"的平台交易，靠谱吗？'},
+  ],
+  choices:[
+    { text:'陌生平台别去', next:'ch5_02', effects:{alertness:8}, tip:'谨慎是对的', tipType:'success', tipClass:'correct' },
+    { text:'让他用官方平台交易', next:'ch5_identify', effects:{alertness:12}, tip:'正确！使用官方平台', tipType:'success', tipClass:'correct' },
+    { text:'我帮你看看这个平台', next:'ch5_02', effects:{alertness:5,trust:10}, requires:{alertness:45}, tip:'准备核实', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch5_02: {
+  scene:'popup', speaker:'游戏交易网', avatar:'buyer',
+  text:'游戏交易网\nICP备案：无\n安全认证：无\n平台评分：5星（刷的）',
+  warning:'⚠ 警告：该网站无ICP备案，非正规交易平台！',
+  voice:'兄弟别犹豫了，我们平台评分五星，注册就送大礼包，稳赚不赔！',
+  choices:[
+    { text:'这平台没有备案，是假的', next:'ch5_identify', effects:{alertness:15}, tip:'识破假平台！', tipType:'success', tipClass:'correct' },
+    { text:'看起来还行啊', next:'ch5_03', effects:{alertness:-5,trust:15}, tip:'别被假评分骗了！', tipType:'danger' },
+    { text:'让我注册看看', next:'ch5_counter1', effects:{alertness:8,trust:20}, requires:{alertness:50}, tip:'将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch5_03: {
+  scene:'chat', speaker:'游戏买家', avatar:'buyer',
+  messages:[
+    {from:'other', text:'你先在平台充值2000保证金，交易完成后退还~'},
+    {from:'other', text:'这是规矩，保护双方利益！'},
+  ],
+  choices:[
+    { text:'保证金？正规平台不需要', next:'ch5_identify', effects:{alertness:12}, tip:'质疑保证金是对的！', tipType:'success', tipClass:'correct' },
+    { text:'行，我充', next:'ch5_04', effects:{assets:-2000,trust:10}, tip:'不该充……', tipType:'danger', tipClass:'danger' },
+    { text:'好的，怎么充', next:'ch5_counter1', effects:{alertness:5,trust:20}, requires:{alertness:45}, tip:'准备收集证据', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch5_04: {
+  scene:'chat', speaker:'表弟', avatar:'friend',
+  messages:[
+    {from:'other', text:'哥！我充了2000保证金，然后买家把我拉黑了！'},
+    {from:'other', text:'平台也打不开了！怎么办啊😭'},
+  ],
+  choices:[
+    { text:'这是假平台骗局！', next:'ch5_bad', rebirth:true, tip:'保证金被骗走了！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch5_counter1: {
+  scene:'chat', speaker:'游戏买家', avatar:'buyer',
+  messages:[
+    {from:'self', text:'好的我注册了。你把收款账户发我，我充保证金。'},
+    {from:'other', text:'这是收款码~ 快充！'},
+    {from:'self', text:'（截图：假平台页面、假买家信息、收款账户。证据齐了。）'},
+  ],
+  choices:[
+    { text:'证据够了，96110！', next:'ch5_end_counter', effects:{alertness:10}, unlockKnowledge:'k5', counter:true, tip:'以牙还牙！', tipType:'gold', tipClass:'counter' },
+    { text:'让我看看他的收款账户', next:'ch5_counter2', effects:{trust:10}, tip:'继续深挖', tipType:'gold' },
+  ]
+},
+ch5_counter2: {
+  scene:'chat', speaker:'游戏买家', avatar:'buyer',
+  messages:[
+    {from:'self', text:'你微信号多少？有问题方便联系。'},
+    {from:'other', text:'就这个啊，你充了保证金我拉你进群~'},
+    {from:'self', text:'（截图：微信号、假平台后台信息。证据+1）'},
+  ],
+  choices:[
+    { text:'完美，举报！', next:'ch5_end_counter', effects:{alertness:12}, unlockKnowledge:'k5', counter:true, tip:'以牙还牙！人赃并获！', tipType:'gold', tipClass:'counter' },
+    { text:'继续套他信息', next:'ch5_bad', rebirth:true, tip:'骗子起了疑心，拉黑跑了！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch5_identify: {
+  scene:'chat', speaker:'表弟', avatar:'friend',
+  messages:[
+    {from:'self', text:'表弟，别去那个平台！没有ICP备案，是假平台。'},
+    {from:'other', text:'还好没充钱！那我用什么平台？'},
+    {from:'self', text:'用官方或大型正规交易平台，别信陌生买家指定的平台。'},
+  ],
+  choices:[
+    { text:'帮表弟举报假平台', next:'ch5_end_identify', effects:{alertness:8}, unlockKnowledge:'k5', tip:'识破游戏交易诈骗！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch5_end_counter: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第五章完成 — 以牙还牙！】\n你在假平台注册收集了假买家信息、收款账户\n和假平台页面证据，拨打96110举报，\n警方封锁了假交易平台！\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_05', effects:{alertness:10} }]
+},
+ch5_end_identify: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第五章完成 — 识破骗局】\n你帮表弟识破了游戏交易诈骗，避免了损失。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_05', effects:{alertness:8} }]
+},
+ch5_bad: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'表弟的2000块没了，游戏号也被盗了。\n我没能保护他。\n\n<span class="gold">重来，这次绝不能让他受骗！</span>',
+  choices:[{ text:'重生', next:'rebirth', rebirth:true }]
+},
+
+// ════════════════════════════════════════
+// 第六章：裸聊敲诈诈骗（难度★★★★）
+// ════════════════════════════════════════
+ch6_start: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'深夜，小杰疯狂给我发消息。\n\n"哥…救命…有人要敲我5万…"\n"说不给钱就把视频发给我通讯录所有人…"\n\n上一世，小杰就是被这样逼到了绝路，\n交了5万又被要10万，最后崩溃。',
+  choices:[{ text:'查看消息', next:'ch6_01' }]
+},
+ch6_01: {
+  scene:'chat', speaker:'小杰', avatar:'friend',
+  messages:[
+    {from:'other', text:'哥…救命…有人要敲我5万…'},
+    {from:'other', text:'说不给钱就把视频发给我通讯录所有人😭'},
+    {from:'other', text:'我存了5年的联系人啊…完了…'},
+  ],
+  choices:[
+    { text:'什么视频？说清楚', next:'ch6_02', effects:{alertness:5}, tip:'先了解情况', tipType:'success' },
+    { text:'别给钱！先冷静下来', next:'ch6_03', effects:{alertness:10}, tip:'冷静是对的！', tipType:'success', tipClass:'correct' },
+    { text:'别慌，这是裸聊敲诈', next:'ch6_03', effects:{alertness:15}, requires:{alertness:50}, tip:'一眼识破骗局类型！', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch6_02: {
+  scene:'chat', speaker:'小杰', avatar:'friend',
+  messages:[
+    {from:'other', text:'有个美女加我好友…聊了一会让我下个APP视频…'},
+    {from:'other', text:'然后就说录了视频，有我通讯录，不给钱就群发！'},
+  ],
+  choices:[
+    { text:'那个APP有问题，别给钱', next:'ch6_03', effects:{alertness:12}, tip:'判断正确！', tipType:'success', tipClass:'correct' },
+    { text:'你怎么能…算了先解决问题', next:'ch6_03', effects:{alertness:5}, tip:'现在不是责备的时候', tipType:'success' },
+  ]
+},
+ch6_03: {
+  scene:'chat', speaker:'小杰', avatar:'friend',
+  messages:[
+    {from:'other', text:'可他真的有我通讯录啊！截图给我看了！'},
+    {from:'other', text:'万一视频是真的呢？我完了…'},
+  ],
+  choices:[
+    { text:'别信他，交了钱还会有第二次', next:'ch6_04', effects:{alertness:15}, tip:'正确！交钱只会被反复敲诈', tipType:'success', tipClass:'correct' },
+    { text:'要不先给钱息事宁人？', next:'ch6_bad', effects:{assets:-50000}, rebirth:true, tip:'交了钱只会被反复勒索！', tipType:'danger', tipClass:'danger' },
+    { text:'视频是假的，AI合成的', next:'ch6_counter1', effects:{alertness:10,trust:15}, requires:{alertness:55}, tip:'将计就计收集证据', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch6_04: {
+  scene:'chat', speaker:'小杰', avatar:'friend',
+  messages:[
+    {from:'other', text:'可万一是真的呢…'},
+    {from:'self', text:'骗子用木马APP窃取了你的通讯录。'},
+    {from:'self', text:'视频很可能是AI换脸合成的，或者根本就是诈骗话术。'},
+    {from:'self', text:'给钱解决不了问题，只会被反复勒索。'},
+  ],
+  choices:[
+    { text:'先断网卸载APP改密码', next:'ch6_05', effects:{alertness:10}, tip:'正确！先止损', tipType:'success', tipClass:'correct' },
+    { text:'我来帮你收集证据', next:'ch6_counter1', effects:{alertness:8,trust:10}, requires:{alertness:55}, tip:'准备反击', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch6_05: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'我指导小杰：断网、卸载木马APP、修改所有密码。\n\n但通讯录已经被窃取，需要通知好友防范骚扰信息。\n\n同时，我们还要收集骗子的证据，举报这个敲诈团伙。',
+  choices:[
+    { text:'通知通讯录好友防范', next:'ch6_06', effects:{alertness:10}, tip:'正确做法！', tipType:'success', tipClass:'correct' },
+    { text:'顺便把骗子APP信息上报', next:'ch6_end_counter', effects:{alertness:15}, requires:{alertness:60}, unlockKnowledge:'k6', counter:true, tip:'以牙还牙！', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch6_06: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'小杰群发了通知给通讯录好友，让大家忽略可能的骚扰信息。\n骗子发送骚扰信息后无人理会，敲诈计划落空。',
+  choices:[
+    { text:'报警处理', next:'ch6_end_safe', effects:{alertness:10}, unlockKnowledge:'k6', tip:'正确做法！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch6_counter1: {
+  scene:'chat', speaker:'小杰', avatar:'friend',
+  messages:[
+    {from:'self', text:'小杰，你跟骗子说需要时间筹钱，拖住他。'},
+    {from:'other', text:'好的哥…我尽量…'},
+    {from:'self', text:'（我用自己的号联系了骗子，假装是小杰的朋友要"协商"。骗子的收款二维码、微信号、话术模板，全部截图保存。）'},
+  ],
+  choices:[
+    { text:'截好图了，96110！', next:'ch6_end_counter', effects:{alertness:15}, unlockKnowledge:'k6', counter:true, tip:'以牙还牙！证据确凿！', tipType:'gold', tipClass:'counter' },
+    { text:'再套套他的收款方式', next:'ch6_counter2', effects:{trust:10}, tip:'继续收集', tipType:'gold' },
+  ]
+},
+ch6_counter2: {
+  scene:'chat', speaker:'骗子', avatar:'stranger',
+  messages:[
+    {from:'self', text:'5万太多了，能不能分期？'},
+    {from:'other', text:'少废话！先转2万定金！这是收款码！'},
+    {from:'self', text:'（截图：收款二维码、诈骗话术。证据+1）'},
+  ],
+  choices:[
+    { text:'收款二维码到手，举报！', next:'ch6_end_counter', effects:{alertness:12}, unlockKnowledge:'k6', counter:true, tip:'以牙还牙！', tipType:'gold', tipClass:'counter' },
+    { text:'再拖一会', next:'ch6_bad', rebirth:true, tip:'骗子开始群发骚扰了！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch6_end_counter: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第六章完成 — 以牙还牙！】\n你帮助小杰稳住骗子，收集了木马APP信息、\n收款二维码和诈骗话术证据，\n拨打96110报警，警方抓获了敲诈团伙！\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_06', effects:{alertness:10} }]
+},
+ch6_end_safe: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第六章完成 — 化解危机】\n你帮助小杰断网止损、通知好友防范、报警处理。\n骗子发送骚扰信息无人理会，敲诈计划落空。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_06', effects:{alertness:8} }]
+},
+ch6_bad: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'5万块转出去了。\n但第二天，骗子又要10万。\n第三天，20万。\n\n无底洞。\n上一世，小杰就是这样被逼到崩溃。\n\n<span class="gold">重来，这次要救他！</span>',
+  choices:[{ text:'重生', next:'rebirth', rebirth:true }]
+},
+
+// ════════════════════════════════════════
+// 终章：冒充公检法诈骗（难度★★★★★ 复合型）
+// ════════════════════════════════════════
+ch7_start: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'手机响了。来电显示：+86XXX\n\n"你好，这里是XX市公安局。"\n\n上一世，这通电话是压垮我的最后一根稻草。\n骗子冒充公检法，一步步把我逼到转账"安全账户"。\n五万块积蓄，灰飞烟灭。\n\n这一次，该轮到他们害怕了。',
+  choices:[{ text:'接听', next:'ch7_01' }]
+},
+ch7_01: {
+  scene:'call', speaker:'张警官', avatar:'police',
+  caller:'XX市公安局', number:'+86XXX',
+  text:'你好，我是XX市公安局张警官。\n你的身份证涉嫌一起跨省洗钱案，需要你配合调查。\n这是严肃的法律问题，请认真对待。',
+  choices:[
+    { text:'洗钱？我没有啊！', next:'ch7_02', effects:{alertness:-5,trust:10}, tip:'被吓住了……冷静！', tipType:'danger' },
+    { text:'公安局不会打电话办案', next:'ch7_03', effects:{alertness:15}, tip:'正确！公检法不会电话办案', tipType:'success', tipClass:'correct' },
+    { text:'好的，怎么配合？', next:'ch7_02', effects:{alertness:10,trust:20}, requires:{alertness:55}, tip:'准备将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch7_02: {
+  scene:'call', speaker:'张警官', avatar:'police',
+  caller:'XX市公安局', number:'+86XXX',
+  text:'我现在帮你转接检察院。\n<span class="danger">请注意：调查期间不能告诉任何人，否则按妨碍公务处理。</span>',
+  choices:[
+    { text:'不能告诉任何人？', next:'ch7_03', effects:{alertness:12}, tip:'质疑"保密"要求是对的！', tipType:'success', tipClass:'correct' },
+    { text:'好的，我配合', next:'ch7_04', effects:{alertness:-8,trust:15}, tip:'"保密"是诈骗的标志！', tipType:'danger' },
+    { text:'行，转吧', next:'ch7_counter1', effects:{alertness:8,trust:20}, requires:{alertness:60}, tip:'准备收集证据', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch7_03: {
+  scene:'call', speaker:'张警官', avatar:'police',
+  caller:'XX市公安局', number:'+86XXX',
+  text:'不配合就是对抗执法！要负法律责任！\n你已经被立案调查了！\n请立即配合，否则后果自负！',
+  choices:[
+    { text:'真正的警察不会这样办案', next:'ch7_identify', effects:{alertness:15}, tip:'正确！公检法有正规法律程序', tipType:'success', tipClass:'correct' },
+    { text:'好好好，我配合', next:'ch7_04', effects:{alertness:-5,trust:10}, tip:'被吓住了……', tipType:'danger' },
+    { text:'对不起，我配合调查', next:'ch7_counter1', effects:{alertness:10,trust:15}, requires:{alertness:55}, tip:'将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch7_04: {
+  scene:'call', speaker:'李检察官', avatar:'prosecutor',
+  caller:'XX检察院', number:'+86XXX',
+  text:'我是XX检察院李检察官。\n为了验证你的清白，请下载"安全防护APP"，\n我们会远程监控你的资金流向进行核查。',
+  choices:[
+    { text:'要下载APP？这不是办案流程', next:'ch7_identify', effects:{alertness:15}, tip:'正确！这是木马软件！', tipType:'success', tipClass:'correct' },
+    { text:'好吧，我下载', next:'ch7_bad', rebirth:true, tip:'APP是屏幕共享木马！银行信息泄露！', tipType:'danger', tipClass:'danger' },
+    { text:'好的，发链接给我', next:'ch7_counter1', effects:{alertness:10,trust:20}, requires:{alertness:60}, tip:'将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch7_05: {
+  scene:'call', speaker:'李检察官', avatar:'prosecutor',
+  caller:'XX检察院', number:'+86XXX',
+  text:'为了验证资金来源是否合法，\n请将你名下存款转入公安机关<span class="danger">"安全账户"</span>。\n核查完毕后全额退还。',
+  choices:[
+    { text:'安全账户？银行没有这种东西！', next:'ch7_identify', effects:{alertness:20}, tip:'正确！公检法没有"安全账户"！', tipType:'success', tipClass:'correct' },
+    { text:'转多少？', next:'ch7_06', effects:{alertness:-10,trust:15}, tip:'千万别转！', tipType:'danger' },
+    { text:'好的，转多少？', next:'ch7_counter2', effects:{alertness:10,trust:25}, requires:{alertness:65}, tip:'准备收网', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch7_06: {
+  scene:'call', speaker:'李检察官', avatar:'prosecutor',
+  caller:'XX检察院', number:'+86XXX',
+  text:'你的全部存款。5万元。\n转完后会退还给你。\n这是法律程序，请配合。',
+  choices:[
+    { text:'全部存款？这不对！', next:'ch7_identify', effects:{alertness:15}, tip:'终于醒悟了！', tipType:'success', tipClass:'correct' },
+    { text:'好…我转', next:'ch7_bad', effects:{assets:-50000}, rebirth:true, tip:'全部积蓄都没了！', tipType:'danger', tipClass:'danger' },
+    { text:'好的，给我账号', next:'ch7_counter2', effects:{alertness:10,trust:25}, requires:{alertness:65}, tip:'准备收网', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch7_counter1: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'我假装配合，开启了通话录音。\n\n"张警官"报了警号和单位，"李检察官"也报了名字——\n全是假的，但通话录音是铁证。\n\n继续配合，等他们露出更多马脚。',
+  choices:[
+    { text:'继续配合，等"安全账户"', next:'ch7_05', effects:{alertness:5,trust:10}, tip:'继续收集证据', tipType:'gold' },
+    { text:'录音够了，直接96110', next:'ch7_end_counter', effects:{alertness:15}, unlockKnowledge:'k7', counter:true, tip:'以牙还牙！', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch7_counter2: {
+  scene:'call', speaker:'李检察官', avatar:'prosecutor',
+  caller:'XX检察院', number:'+86XXX',
+  text:'这是"安全账户"：6228XXXXXXXX\n户名：XX\n请尽快转账，案件紧急。',
+  choices:[
+    { text:'收款账号到手，96110！', next:'ch7_end_counter', effects:{alertness:20}, unlockKnowledge:'k7', counter:true, tip:'以牙还牙！关键证据到手！', tipType:'gold', tipClass:'counter' },
+    { text:'再要他的"警官证"照片', next:'ch7_counter3', effects:{trust:15}, tip:'继续深挖', tipType:'gold' },
+  ]
+},
+ch7_counter3: {
+  scene:'chat', speaker:'李检察官', avatar:'prosecutor',
+  messages:[
+    {from:'self', text:'我怎么确认你是真的检察官？把警官证发我看看。'},
+    {from:'other', text:'这是我的证件！现在赶紧转账！'},
+    {from:'self', text:'（截图：假警官证照片、假安全账户号码、通话录音。铁证如山！）'},
+  ],
+  choices:[
+    { text:'铁证如山，96110！', next:'ch7_end_counter', effects:{alertness:25}, unlockKnowledge:'k7', counter:true, tip:'以牙还牙！完美收网！', tipType:'gold', tipClass:'counter' },
+    { text:'再拖一会', next:'ch7_bad', rebirth:true, tip:'骗子察觉不对，挂断跑路了！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch7_identify: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'我挂断了电话，拨打了真正的96110。\n\n"您好，您遇到的正是冒充公检法诈骗。\n公检法不会通过电话办案，更没有所谓的安全账户。"\n\n我将骗子的号码和通话记录提交给了警方。',
+  choices:[
+    { text:'继续', next:'ch7_end_identify', effects:{alertness:8}, unlockKnowledge:'k7', tip:'识破终极骗局！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch7_end_counter: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第七章完成 — 以牙还牙！终极反击！】\n你假装配合，全程录音，收集了假警号、假警官证、\n假"安全账户"号码等关键证据，\n拨打96110举报，警方跨省抓捕了冒充公检法的诈骗团伙！\n\n所有被骗资金成功追回！\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_07', effects:{alertness:10} }]
+},
+ch7_end_identify: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第七章完成 — 识破骗局】\n你识破了冒充公检法诈骗，及时挂断电话并报警。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_07', effects:{alertness:8} }]
+},
+ch7_bad: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'上一世的一切重演了。\n"安全账户"是假的，钱转出去就回不来了。\n\n但这次，我还有重来一次的机会。\n<span class="gold">最后一次重生……这次一定要赢！</span>',
+  choices:[{ text:'重生', next:'rebirth', rebirth:true }]
+},
+
+// ════════════════════════════════════════
+// 章间过渡
+// ════════════════════════════════════════
+interlude_01: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'第一关过了。\n刷单诈骗——先给甜头再骗大的，最经典的入门骗局。\n\n但接下来的会越来越难。\n我感到手机又要响了……',
+  choices:[{ text:'进入第二章', next:'ch2_start', chapter:1 }]
+},
+interlude_02: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'又一个骗子落网。\n冒充客服——利用你对"退款"的期待，骗取银行卡和验证码。\n\n记住：验证码是最后一道防线，给谁都不能给。\n下一关来了。',
+  choices:[{ text:'进入第三章', next:'ch3_start', chapter:2 }]
+},
+interlude_03: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'虚假投资——年化300%？天上不会掉馅饼。\n没有牌照的"导师"都是骗子，提现要交"税费"的一律是诈骗。\n\n下一关，有人需要我的帮助。',
+  choices:[{ text:'进入第四章', next:'ch4_start', chapter:3 }]
+},
+interlude_04: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'帮小杰挡住了网络贷款诈骗。\n记住：正规贷款不收前期费用。工本费、解冻费、保险费——都是骗钱的套路。\n\n下一关，表弟也遇到了麻烦。',
+  choices:[{ text:'进入第五章', next:'ch5_start', chapter:4 }]
+},
+interlude_05: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'又帮表弟挡了一劫。\n游戏交易——陌生平台不可信，"保证金"是陷阱，没有ICP备案的一律不碰。\n\n接下来这个……是上一世最让我痛心的。',
+  choices:[{ text:'进入第六章', next:'ch6_start', chapter:5 }]
+},
+interlude_06: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'小杰保住了。\n裸聊敲诈——不下载不明APP，不视频裸聊，被敲诈不给钱。\n断网、卸载、改密码、通知好友、打96110。\n\n还有一个"客服"在等着……',
+  choices:[{ text:'进入第七章', next:'ch7_start', chapter:6 }]
+},
+// ——— 第七至第八章过渡 ———
+interlude_07: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'公检法冒充骗局，破了。\n记住：公检法不会电话办案，没有"安全账户"。\n\n但骗子不会就此罢休。\n这次，有人冒充客服，要帮我"取消会员"……\n<span class="em">套路换了个皮，本质还是骗钱。</span>',
+  choices:[{ text:'进入第八章', next:'ch8_start', chapter:7 }]
+},
+// ——— 第八至第九章过渡 ———
+interlude_08: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'又一个骗子落网。\n冒充客服取消会员——诱导下载屏幕共享软件，窃取银行信息。\n\n记住：任何让你下载远程操控软件的"客服"都是骗子。\n\n接下来的骗局更加隐蔽……\n有人用"色情服务"做诱饵，行刷单诈骗之实。',
+  choices:[{ text:'进入第九章', next:'ch9_start', chapter:8 }]
+},
+// ——— 第九至第十章过渡 ———
+interlude_09: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'色情刷单——用欲望做饵，用刷单做钩。\n记住：以色情服务为诱饵要求转账刷单，100%是诈骗。\n\n最后一关了。\n有人在网上"谈恋爱"，用感情织网，用投资收割。\n<span class="gold">这是最温柔的一刀，也是最致命的。</span>',
+  choices:[{ text:'进入终章', next:'ch10_start', chapter:9 }]
+},
+
+// ════════════════════════════════════════
+// 第八章：冒充客服取消会员诈骗（难度★★★☆）
+// 骗子伪装客服声称协助取消自动续费会员，诱导下载屏幕共享/远程操控软件
+// ════════════════════════════════════════
+ch8_start: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'电话响了。来电显示：XX视频平台客服。\n\n"您好，您开通的年度会员自动续费功能即将扣费，\n如需取消，请配合我们操作。"\n\n上一世，邻居王阿姨就是这么被骗的——\n对方让她下载了一个"屏幕共享"软件，\n银行卡密码和验证码被看得一清二楚，积蓄瞬间清空。',
+  choices:[{ text:'接听', next:'ch8_01' }]
+},
+ch8_01: {
+  scene:'call', speaker:'XX视频客服', avatar:'service_scam',
+  caller:'XX视频平台客服', number:'4008-XX6-200',
+  text:'您好，我是XX视频平台客服。\n系统检测到您的年度会员即将自动续费扣费¥198。\n如需取消，请配合我操作，不会产生任何费用。',
+  choices:[
+    { text:'我没开通过会员啊？', next:'ch8_02', effects:{alertness:8}, tip:'质疑得对！', tipType:'success', tipClass:'correct' },
+    { text:'好的，帮我取消', next:'ch8_02', effects:{alertness:-5,trust:10}, tip:'不要轻易相信来电客服', tipType:'danger' },
+    { text:'取消续费在APP里就行吧', next:'ch8_03', effects:{alertness:10}, tip:'正确！自行在官方APP操作', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch8_02: {
+  scene:'call', speaker:'XX视频客服', avatar:'service_scam',
+  caller:'XX视频平台客服', number:'4008-XX6-200',
+  text:'这是系统默认开通的，很多用户都遇到了。\n取消很简单，您下载一个"远程协助"软件，\n我远程帮您操作取消，两分钟就好。\n<span class="danger">请下载"XX远程助手"APP。</span>',
+  choices:[
+    { text:'下载远程操控软件？不对劲', next:'ch8_identify', effects:{alertness:15}, tip:'正确！远程操控软件极危险！', tipType:'success', tipClass:'correct' },
+    { text:'好吧，我下载', next:'ch8_04', effects:{alertness:-8,trust:15}, tip:'千万不要下载！', tipType:'danger', tipClass:'danger' },
+    { text:'好的，发链接给我', next:'ch8_counter1', effects:{alertness:10,trust:20}, requires:{alertness:50}, tip:'准备将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch8_03: {
+  scene:'call', speaker:'XX视频客服', avatar:'service_scam',
+  caller:'XX视频平台客服', number:'4008-XX6-200',
+  text:'APP里取消不了，需要技术部门后台处理。\n您下载"XX远程助手"，我帮您操作就行。\n这是专属客服通道，比APP快多了~',
+  choices:[
+    { text:'APP里取消不了？肯定是假的', next:'ch8_identify', effects:{alertness:12}, tip:'判断正确！', tipType:'success', tipClass:'correct' },
+    { text:'那就下载吧', next:'ch8_04', effects:{alertness:-5,trust:10}, tip:'别下载！', tipType:'danger' },
+    { text:'行，发链接', next:'ch8_counter1', effects:{alertness:8,trust:20}, requires:{alertness:50}, tip:'准备反击', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch8_04: {
+  scene:'popup', speaker:'XX远程助手', avatar:'service_scam',
+  text:'XX远程助手\n权限请求：屏幕录制、键盘输入、短信读取、文件访问\n开发者：未知个人\n安全检测：高风险⚠️',
+  warning:'⚠ 警告：该APP请求屏幕录制和键盘输入权限，可窃取你的密码和验证码！',
+  voice:'先生您好，麻烦您按照我的指引操作，下载这个远程协助工具，我帮您处理退款！',
+  choices:[
+    { text:'安装', next:'ch8_05', effects:{trust:15}, tip:'安装后手机将被完全监控！', tipType:'danger', tipClass:'danger' },
+    { text:'这些权限太危险了！', next:'ch8_identify', effects:{alertness:15}, tip:'及时醒悟！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch8_05: {
+  scene:'call', speaker:'XX视频客服', avatar:'service_scam',
+  caller:'XX视频平台客服', number:'4008-XX6-200',
+  text:'好的，远程助手已连接。\n请打开银行APP，我帮您操作取消续费扣款。\n<span class="danger">请把手机收到的验证码告诉我，确认身份。</span>',
+  choices:[
+    { text:'验证码不能给！', next:'ch8_identify_late', effects:{alertness:15}, tip:'关键时刻醒悟！', tipType:'success', tipClass:'correct' },
+    { text:'好的，验证码是……', next:'ch8_bad', rebirth:true, tip:'验证码泄露！银行卡资金瞬间被转走！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch8_identify: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'我挂断电话，拨打了官方客服核实。\n\n"您没有开通任何会员，也没有自动续费。那个4008号码不是我们的。"\n\n果然是骗子。所谓"取消会员"是假，\n诱导下载远程操控软件、窃取银行信息才是真。\n\n我截图保留了通话记录和骗子号码。',
+  choices:[
+    { text:'报警处理', next:'ch8_end_identify', effects:{alertness:8}, unlockKnowledge:'k8', tip:'识破骗局！', tipType:'success', tipClass:'correct' },
+    { text:'等等，收集更多证据', next:'ch8_counter1', effects:{alertness:5,trust:15}, requires:{alertness:50}, tip:'准备反击', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch8_identify_late: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'虽然及时拒绝了验证码，\n但远程操控软件已经安装在手机上。\n\n我立即卸载了软件，修改了银行密码。\n幸好没有泄露验证码，资金没有损失。\n\n这就是冒充客服取消会员诈骗——\n用"帮你取消"做幌子，实际是窃取银行信息。',
+  choices:[
+    { text:'报警并卸载软件', next:'ch8_end_late', effects:{alertness:5}, unlockKnowledge:'k8', tip:'及时止损', tipType:'danger' },
+  ]
+},
+ch8_counter1: {
+  scene:'call', speaker:'XX视频客服', avatar:'service_scam',
+  caller:'XX视频平台客服', number:'4008-XX6-200',
+  text:'（我假装配合）好的我下载。你把下载链接发我短信，\n顺便把你工号和部门告诉我，我记录一下。',
+  choices:[
+    { text:'套到信息了，继续', next:'ch8_counter2', effects:{alertness:8,trust:15}, tip:'继续收集证据', tipType:'gold' },
+    { text:'够了，直接96110', next:'ch8_end_counter', effects:{alertness:10}, unlockKnowledge:'k8', counter:true, tip:'以牙还牙！', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch8_counter2: {
+  scene:'chat', speaker:'XX视频客服', avatar:'service_scam',
+  messages:[
+    {from:'other', text:'工号K8862，技术支持部。下载链接发您短信了~'},
+    {from:'self', text:'（截图：假工号、假客服号码、远程操控APP下载链接、通话录音。证据齐了。）'},
+    {from:'self', text:'你们这个远程助手是正规软件吗？有安全认证吗？'},
+    {from:'other', text:'当然正规！您放心使用~'},
+    {from:'self', text:'（截图：APP权限列表显示请求屏幕录制+键盘输入，铁证如山。）'},
+  ],
+  choices:[
+    { text:'铁证齐全，96110！', next:'ch8_end_counter', effects:{alertness:12}, unlockKnowledge:'k8', counter:true, tip:'以牙还牙！证据确凿！', tipType:'gold', tipClass:'counter' },
+    { text:'再拖一会', next:'ch8_bad', rebirth:true, tip:'骗子催促操作，察觉不对挂断了！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch8_end_counter: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第八章完成 — 以牙还牙！】\n你假装配合，套取了假客服工号、假号码和远程操控APP下载链接，\n保留了通话录音和APP权限截图，\n拨打96110举报，警方顺藤摸瓜端掉了诈骗窝点！\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_08', effects:{alertness:10} }]
+},
+ch8_end_identify: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第八章完成 — 识破骗局】\n你识破了冒充客服取消会员诈骗，\n及时挂断电话并通过官方渠道核实，举报了假客服。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_08', effects:{alertness:8} }]
+},
+ch8_end_late: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第八章完成 — 亡羊补牢】\n虽然差点被骗，但好在拒绝提供验证码，及时卸载了远程操控软件。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_08', effects:{alertness:5} }]
+},
+ch8_bad: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'验证码报出去的瞬间，手机弹出短信：\n"您的账户支出¥XX,XXX元。"\n\n远程操控软件让骗子看到了一切——\n密码、验证码、银行卡号，全部泄露。\n\n<span class="gold">重来……这次绝不能下载那个软件！</span>',
+  choices:[{ text:'重生', next:'rebirth', rebirth:true }]
+},
+
+// ════════════════════════════════════════
+// 第九章：色情刷单诈骗（难度★★★★）
+// 受害人网上寻找色情服务，对方以完成刷单任务作为条件，诱导持续转账
+// ════════════════════════════════════════
+ch9_start: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'社交软件弹出一条消息。头像是个美女。\n\n"哥哥，想找点乐子吗？完成几个小任务就能见面哦~"\n\n上一世，同事老刘就是这样被骗的。\n对方以"刷单任务"作为见面的条件，\n老刘一步步被套进去，最后被骗了三万多。',
+  choices:[{ text:'查看消息', next:'ch9_01' }]
+},
+ch9_01: {
+  scene:'chat', speaker:'小甜甜', avatar:'porn_scam',
+  messages:[
+    {from:'other', text:'哥哥好~看你朋友圈挺帅的😊'},
+    {from:'other', text:'想不想找点乐子？完成几个小任务就能见面哦~'},
+    {from:'other', text:'很简单，帮我刷几单就行，还能赚零花钱呢~'},
+  ],
+  choices:[
+    { text:'什么任务？', next:'ch9_02', effects:{alertness:-3,trust:5}, tip:'不要被诱惑冲昏头脑', tipType:'danger' },
+    { text:'刷单？这不是骗局吗？', next:'ch9_identify', effects:{alertness:12}, tip:'直接识破！', tipType:'success', tipClass:'correct' },
+    { text:'说来看看', next:'ch9_02', effects:{alertness:8,trust:10}, requires:{alertness:55}, tip:'准备将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch9_02: {
+  scene:'chat', speaker:'小甜甜', avatar:'porn_scam',
+  messages:[
+    {from:'other', text:'就是帮我刷几单商品嘛~你先垫付100块，完成后返你120~'},
+    {from:'other', text:'完成3单任务就能见面啦~么么哒💋'},
+  ],
+  choices:[
+    { text:'才100块，试试', next:'ch9_03', effects:{trust:10,assets:-100}, tip:'垫付了100……但任务不会停', tipType:'danger' },
+    { text:'刷单+色情，双重骗局', next:'ch9_identify', effects:{alertness:15}, tip:'正确判断！', tipType:'success', tipClass:'correct' },
+    { text:'好啊，怎么操作', next:'ch9_counter1', effects:{alertness:8,trust:20}, requires:{alertness:55}, tip:'准备收集证据', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch9_03: {
+  scene:'chat', speaker:'小甜甜', avatar:'porn_scam',
+  messages:[
+    {from:'other', text:'好棒~第一单完成了！返你120💰'},
+    {from:'other', text:'再完成第二单，垫500返650~'},
+    {from:'other', text:'完成第三单就能见面啦~加油哦哥哥！'},
+  ],
+  choices:[
+    { text:'来，500就500', next:'ch9_04', effects:{trust:15,assets:-500}, tip:'越投越多了……', tipType:'danger', tipClass:'danger' },
+    { text:'等等，这就是刷单骗局！', next:'ch9_identify_late', effects:{alertness:12}, tip:'终于醒悟！', tipType:'success', tipClass:'correct' },
+    { text:'继续，我要见面', next:'ch9_counter1', effects:{alertness:5,trust:20}, requires:{alertness:60}, tip:'将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch9_04: {
+  scene:'chat', speaker:'小甜甜', avatar:'porn_scam',
+  messages:[
+    {from:'other', text:'第二单也完成啦~'},
+    {from:'other', text:'第三单是大单，垫3000返4000~完成就能见面啦！'},
+    {from:'other', text:'快快快，名额有限~'},
+  ],
+  choices:[
+    { text:'3000……太多了', next:'ch9_05', effects:{alertness:8}, tip:'开始犹豫了', tipType:'danger' },
+    { text:'为了见面，转！', next:'ch9_bad', effects:{assets:-3000}, rebirth:true, tip:'钱转了，人消失了！', tipType:'danger', tipClass:'danger' },
+    { text:'不对，这是连环骗局', next:'ch9_identify_late', effects:{alertness:12}, tip:'识破了！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch9_05: {
+  scene:'chat', speaker:'小甜甜', avatar:'porn_scam',
+  messages:[
+    {from:'other', text:'怎么犹豫了？不想见面了吗？💔'},
+    {from:'other', text:'最后一单了，完成后马上见面！'},
+    {from:'other', text:'而且你说任务没完成，之前的钱也退不了哦~'},
+  ],
+  choices:[
+    { text:'退不了？这不是绑架吗！', next:'ch9_identify_late', effects:{alertness:15}, tip:'识破骗局本质！', tipType:'success', tipClass:'correct' },
+    { text:'那……转吧', next:'ch9_bad', effects:{assets:-3000}, rebirth:true, tip:'又转了3000……人跑了！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch9_identify: {
+  scene:'chat', speaker:'小甜甜', avatar:'porn_scam',
+  messages:[
+    {from:'self', text:'我知道你在干什么。刷单+色情诱惑，双重诈骗。'},
+    {from:'other', text:'哥哥你说什么呢……'},
+    {from:'self', text:'色情服务本身就不合法，你用它做诱饵，行刷单诈骗之实。'},
+    {from:'other', text:'（对方已将你拉黑）'},
+  ],
+  choices:[
+    { text:'截图举报', next:'ch9_end_identify', effects:{alertness:8}, unlockKnowledge:'k9', tip:'识破色情刷单诈骗！', tipType:'success', tipClass:'correct' },
+    { text:'等等，收集证据再举报', next:'ch9_counter1', effects:{alertness:5,trust:15}, requires:{alertness:55}, tip:'准备反击', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch9_identify_late: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'虽然损失了600块，但好在没有转3000。\n\n这就是色情刷单诈骗——\n用色情服务做诱饵，用刷单任务做圈套，\n"完成任务才能见面"是标准话术，\n"任务未完成费用退不了"是威胁手段。\n\n色情服务根本不存在。',
+  choices:[
+    { text:'报警止损', next:'ch9_end_late', effects:{alertness:5}, unlockKnowledge:'k9', tip:'亡羊补牢', tipType:'danger' },
+  ]
+},
+ch9_counter1: {
+  scene:'chat', speaker:'小甜甜', avatar:'porn_scam',
+  messages:[
+    {from:'self', text:'好啊，怎么刷？'},
+    {from:'other', text:'加我微信，我把任务发你~'},
+    {from:'self', text:'（截图：微信号、刷单任务链接、收款账户。证据+1。）'},
+    {from:'self', text:'你们平台叫什么？有营业执照吗？'},
+    {from:'other', text:'我们是XX商城合作方~放心吧！'},
+    {from:'self', text:'（截图：虚假合作信息、假商城链接。证据+1。）'},
+  ],
+  choices:[
+    { text:'证据够了，96110！', next:'ch9_end_counter', effects:{alertness:10}, unlockKnowledge:'k9', counter:true, tip:'以牙还牙！', tipType:'gold', tipClass:'counter' },
+    { text:'再套套她的上级', next:'ch9_counter2', effects:{trust:10}, tip:'继续深挖', tipType:'gold' },
+  ]
+},
+ch9_counter2: {
+  scene:'chat', speaker:'小甜甜', avatar:'porn_scam',
+  messages:[
+    {from:'self', text:'你能介绍你上家给我吗？我想做大单。'},
+    {from:'other', text:'可以呀~我拉你进群，群里有很多任务~'},
+    {from:'self', text:'（截图：诈骗群二维码、上级"管理"信息。证据+1。）'},
+    {from:'other', text:'你怎么还不做任务？再不做名额就没了！'},
+  ],
+  choices:[
+    { text:'完美收网，96110！', next:'ch9_end_counter', effects:{alertness:12}, unlockKnowledge:'k9', counter:true, tip:'以牙还牙！人赃并获！', tipType:'gold', tipClass:'counter' },
+    { text:'再拖一会', next:'ch9_bad', rebirth:true, tip:'骗子察觉不对，拉黑跑了！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch9_end_counter: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第九章完成 — 以牙还牙！】\n你假装上钩，收集了骗子微信号、刷单任务链接、\n收款账户和诈骗群二维码等证据，\n拨打96110举报，警方捣毁了色情刷单诈骗团伙！\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_09', effects:{alertness:10} }]
+},
+ch9_end_identify: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第九章完成 — 识破骗局】\n你识破了色情刷单诈骗，保留了证据并举报。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_09', effects:{alertness:8} }]
+},
+ch9_end_late: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【第九章完成 — 亡羊补牢】\n损失600元，但及时止损并报警。\n\n反诈知识已收录。',
+  choices:[{ text:'继续', next:'interlude_09', effects:{alertness:5} }]
+},
+ch9_bad: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'3000块转了出去。\n"小甜甜"再也没有回消息。\n\n以色情为饵，以刷单为钩，以见面为饵——\n从头到尾都是骗局。\n\n<span class="gold">重来，这次绝不上当！</span>',
+  choices:[{ text:'重生', next:'rebirth', rebirth:true }]
+},
+
+// ════════════════════════════════════════
+// 第十章（终章）：虚假投资网恋诈骗（难度★★★★★ 复合型）
+// 线上交友发展恋爱关系，骗子编造内部高收益投资渠道，诱导持续投入
+// ════════════════════════════════════════
+ch10_start: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'社交软件上，一个叫"梦里花"的人加了我好友。\n\n头像温柔，朋友圈精致，每日早安晚安。\n\n上一世，我的大学同学小美就是这样被套进去的。\n对方用三个月的温柔，换走了她全部积蓄——八万块。\n\n"恋爱"是假的，投资是真的，\n等她发现提不了现，那个人已经消失了。',
+  choices:[{ text:'通过好友申请', next:'ch10_01' }]
+},
+ch10_01: {
+  scene:'chat', speaker:'梦里花', avatar:'romance_scam',
+  messages:[
+    {from:'other', text:'你好呀~很高兴认识你😊'},
+    {from:'other', text:'我看你朋友圈，觉得你是个很有趣的人~'},
+    {from:'other', text:'最近在忙什么呢？工作辛苦吗？'},
+  ],
+  choices:[
+    { text:'你好，你是？', next:'ch10_02', effects:{alertness:5}, tip:'先了解情况', tipType:'success' },
+    { text:'你是做什么的？', next:'ch10_02', effects:{alertness:8,trust:5}, tip:'了解对方背景是对的', tipType:'success' },
+    { text:'网恋推荐投资？我认识这种套路', next:'ch10_03', effects:{alertness:12}, requires:{alertness:60}, tip:'一眼看穿套路', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch10_02: {
+  scene:'chat', speaker:'梦里花', avatar:'romance_scam',
+  messages:[
+    {from:'other', text:'我在一家投资公司上班~最近行情很好呢'},
+    {from:'other', text:'对了，你有理财的习惯吗？'},
+    {from:'other', text:'我有个内部投资渠道，年化收益300%，稳赚不赔💎'},
+    {from:'other', text:'很多同事都在投，你要不要试试？'},
+  ],
+  choices:[
+    { text:'300%？太夸张了', next:'ch10_03', effects:{alertness:10}, tip:'保持怀疑是对的！', tipType:'success', tipClass:'correct' },
+    { text:'真的吗？教教我', next:'ch10_04', effects:{trust:10,alertness:-5}, tip:'被感情+高收益冲昏了头', tipType:'danger' },
+    { text:'有意思，我了解一下', next:'ch10_04', effects:{alertness:8,trust:15}, requires:{alertness:55}, tip:'准备将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch10_03: {
+  scene:'chat', speaker:'梦里花', avatar:'romance_scam',
+  messages:[
+    {from:'self', text:'年化300%？这不现实吧。'},
+    {from:'other', text:'你不知道，这是内部渠道，普通人接触不到的~'},
+    {from:'other', text:'看看我的收益截图，入金5万一周到账15万👇'},
+    {from:'other', text:'我们已经这么熟了，我会骗你吗？💔'},
+  ],
+  choices:[
+    { text:'熟人推荐也要警惕', next:'ch10_identify', effects:{alertness:12}, tip:'正确！熟人推荐更危险', tipType:'success', tipClass:'correct' },
+    { text:'你说的有道理……', next:'ch10_04', effects:{trust:10,alertness:-3}, tip:'感情牌奏效了……', tipType:'danger' },
+    { text:'行，我入点试试', next:'ch10_04', effects:{alertness:8,trust:20}, requires:{alertness:55}, tip:'将计就计', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch10_04: {
+  scene:'chat', speaker:'梦里花', avatar:'romance_scam',
+  messages:[
+    {from:'other', text:'太好了！注册这个平台就行~'},
+    {from:'other', text:'先入1万试试水，明天就能看到收益！'},
+    {from:'other', text:'我们以后一起理财，一起赚钱，好不好？💕'},
+  ],
+  choices:[
+    { text:'先入1万试试', next:'ch10_05', effects:{assets:-10000,trust:15}, tip:'钱投进去了……', tipType:'danger', tipClass:'danger' },
+    { text:'等等，你这是哪个平台？', next:'ch10_identify', effects:{alertness:12}, tip:'核实平台是对的！', tipType:'success', tipClass:'correct' },
+    { text:'好的，我注册看看', next:'ch10_counter1', effects:{alertness:8,trust:20}, requires:{alertness:55}, tip:'准备收集证据', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch10_05: {
+  scene:'popup', speaker:'投资平台', avatar:'romance_scam',
+  text:'账户余额：¥12,800\n今日收益：+¥2,800\n累计收益率：+28%\n可提现金额：¥12,800',
+  warning:'⚠ 警告：虚假投资平台可后台操控数据！初期允许提现是为了诱导大额投入！',
+  voice:'亲爱的，你看我们的收益多好！再投一点，以后咱们一起过好日子！',
+  choices:[
+    { text:'涨了！能提现！再投5万', next:'ch10_06', effects:{assets:-50000,trust:15}, tip:'贪心了……', tipType:'danger', tipClass:'danger' },
+    { text:'先提现试试看', next:'ch10_07', effects:{alertness:5}, tip:'先提现是对的', tipType:'success' },
+    { text:'等等…是不是假平台？', next:'ch10_identify_late', effects:{alertness:10}, tip:'开始怀疑了', tipType:'danger' },
+  ]
+},
+ch10_06: {
+  scene:'popup', speaker:'投资平台', avatar:'romance_scam',
+  text:'账户余额：¥68,000\n今日收益：+¥8,200\n累计收益率：+36%\n可提现金额：¥0（需缴纳20%个人所得税后提现）',
+  warning:'⚠ 警告：提现需要缴纳税费是投资诈骗的典型套路！',
+  voice:'就差最后一步啦，交完税就能提现了，这钱马上就到账！',
+  choices:[
+    { text:'交税就交税', next:'ch10_bad', effects:{assets:-13600}, rebirth:true, tip:'又是连环收费骗局！', tipType:'danger', tipClass:'danger' },
+    { text:'提现还要交税？骗局！', next:'ch10_identify_late', effects:{alertness:12}, tip:'识破了连环套！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch10_07: {
+  scene:'chat', speaker:'梦里花', avatar:'romance_scam',
+  messages:[
+    {from:'self', text:'我想提现。'},
+    {from:'other', text:'提现需要先缴纳20%的个人所得税哦~'},
+    {from:'other', text:'交完税就可以全额提现了~别担心，这是规定💕'},
+  ],
+  choices:[
+    { text:'交税就交税', next:'ch10_bad', effects:{assets:-13600}, rebirth:true, tip:'交了税费人也消失了！', tipType:'danger', tipClass:'danger' },
+    { text:'提现要交税？骗局！', next:'ch10_identify_late', effects:{alertness:15}, tip:'识破了！', tipType:'success', tipClass:'correct' },
+  ]
+},
+ch10_identify: {
+  scene:'chat', speaker:'梦里花', avatar:'romance_scam',
+  messages:[
+    {from:'self', text:'你的投资平台有金融牌照吗？在证监会查不到。'},
+    {from:'other', text:'你……你怎么知道的？'},
+    {from:'other', text:'（对方已将你拉黑）'},
+  ],
+  choices:[
+    { text:'截图举报', next:'ch10_end_identify', effects:{alertness:8}, unlockKnowledge:'k10', tip:'识破网恋投资骗局！', tipType:'success', tipClass:'correct' },
+    { text:'等等，继续套信息', next:'ch10_counter1', effects:{alertness:5,trust:15}, requires:{alertness:55}, tip:'准备反击', tipType:'gold', tipClass:'counter' },
+  ]
+},
+ch10_identify_late: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'虽然损失了1万块，但好在没有继续交"税费"或追加5万投资。\n\n虚假投资网恋诈骗——\n先用感情建立信任，再用"内部渠道"诱导投资，\n初期允许小额提现降低戒心，\n等大额投入后平台无法提现，骗子消失。',
+  choices:[
+    { text:'报警止损', next:'ch10_end_late', effects:{alertness:5}, unlockKnowledge:'k10', tip:'及时止损', tipType:'danger' },
+  ]
+},
+ch10_counter1: {
+  scene:'chat', speaker:'梦里花', avatar:'romance_scam',
+  messages:[
+    {from:'self', text:'行，我入。把平台注册链接发我。'},
+    {from:'other', text:'好的~这是链接！快注册！'},
+    {from:'self', text:'（截图：假平台链接、假收益截图、收款账户。证据+1。）'},
+    {from:'self', text:'你公司叫什么？地址在哪？我好去实地考察。'},
+    {from:'other', text:'我们在XX大厦~随时欢迎！'},
+    {from:'self', text:'（截图：虚假公司信息、假地址。证据+1。）'},
+  ],
+  choices:[
+    { text:'证据够了，96110！', next:'ch10_end_counter', effects:{alertness:10,assets:10000}, unlockKnowledge:'k10', counter:true, tip:'以牙还牙！追回损失！', tipType:'gold', tipClass:'counter' },
+    { text:'再套套她的上级信息', next:'ch10_counter2', effects:{trust:10}, tip:'继续深挖', tipType:'gold' },
+  ]
+},
+ch10_counter2: {
+  scene:'chat', speaker:'梦里花', avatar:'romance_scam',
+  messages:[
+    {from:'self', text:'你能介绍你上级给我认识吗？我想做大额投资。'},
+    {from:'other', text:'可以呀~我拉你进VIP群~'},
+    {from:'self', text:'（截图：诈骗群二维码、上级"投资总监"信息。证据+1。）'},
+    {from:'other', text:'你还没入金？快入金呀，再不入就晚了！'},
+    {from:'self', text:'（截图：催促话术、收款账户。铁证如山。）'},
+  ],
+  choices:[
+    { text:'铁证齐了，96110！', next:'ch10_end_counter', effects:{alertness:12,assets:10000}, unlockKnowledge:'k10', counter:true, tip:'以牙还牙！人赃并获！', tipType:'gold', tipClass:'counter' },
+    { text:'再拖一会', next:'ch10_bad', rebirth:true, tip:'骗子察觉不对，拉黑消失了！', tipType:'danger', tipClass:'danger' },
+  ]
+},
+ch10_end_counter: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【终章完成 — 以牙还牙！终极反击！】\n你假装投入，收集了假平台链接、假收益截图、\n虚假公司信息、诈骗群二维码和"投资总监"身份信息，\n拨打96110举报，警方跨省抓捕了网恋投资诈骗团伙！\n\n被骗资金成功追回！\n反诈知识已收录。',
+  choices:[{ text:'查看结局', next:'ending_check', effects:{alertness:10} }]
+},
+ch10_end_identify: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【终章完成 — 识破骗局】\n你识破了虚假投资网恋诈骗，及时拉黑对方并举报。\n\n反诈知识已收录。',
+  choices:[{ text:'查看结局', next:'ending_check', effects:{alertness:8} }]
+},
+ch10_end_late: {
+  scene:'narration', speaker:'', avatar:'system',
+  text:'【终章完成 — 亡羊补牢】\n损失1万元，但及时止损并报警。\n\n反诈知识已收录。',
+  choices:[{ text:'查看结局', next:'ending_check', effects:{alertness:5} }]
+},
+ch10_bad: {
+  scene:'narration', speaker:'', avatar:'mc',
+  text:'所有的"温柔"都是精心设计的剧本。\n所有的"收益"都是后台操控的数字。\n所有的"承诺"都是为了最后的收割。\n\n积蓄没了，"梦里花"也消失了。\n\n<span class="gold">最后一次重生……这次，一定要赢！</span>',
+  choices:[{ text:'重生', next:'rebirth', rebirth:true }]
+},
+};
+
+// ==================== 游戏初始化 ====================
+function newGame(){
+  game.node = 'prologue_01';
+  game.chapter = -1;
+  game.stats = Object.assign({}, CONFIG.initialStats);
+  game.rebirthCount = 0;
+  game.chapterRebirths = {};
+  game.unlockedKnowledge = [];
+  game.unlockedAchievements = [];
+  game.completedChapters = [];
+  game.counterCount = 0;
+  game.checkpointStats = null;
+  game.gameCompleted = false;
+}
+
+function startNewGame(){
+  initAudio();
+  if(AudioCtx && AudioCtx.state === 'suspended') AudioCtx.resume();
+  setBGMChapter(0);
+  startBGM();
+  playCGIntro();
+}
+
+function playCGIntro(){
+  var container = document.getElementById('cg-intro');
+  var slides = [
+    {img:'avatars/cg_intro_1.jpg', caption:'前世，我接到一个"刷单返利"的电话……', sfx:'danger',  wav:'cg_01.wav'},
+    {img:'avatars/cg_intro_2.jpg', caption:'"轻松赚钱"的诱惑，让我一步步深入',     sfx:'danger',  wav:'cg_02.wav'},
+    {img:'avatars/cg_intro_3.jpg', caption:'当我发现真相时，积蓄已经清零',           sfx:'danger',  wav:'cg_03.wav'},
+    {img:'avatars/cg_intro_4.jpg', caption:'绝望之中，我跪倒在黑暗里',               sfx:'danger',  wav:'cg_04.wav'},
+    {img:'avatars/cg_intro_5.jpg', caption:'然而——一束光，照亮了深渊',               sfx:'rebirth', wav:'cg_05.wav'},
+    {img:'avatars/cg_intro_6.jpg', caption:'时间开始倒流，命运给了我重来的机会',     sfx:'rebirth', wav:'cg_06.wav'},
+    {img:'avatars/cg_intro_8.jpg', caption:'这一次，我要以牙还牙！',                  sfx:'counter', wav:'cg_07.wav'},
+  ];
+  container.innerHTML = '<button class="cg-skip" onclick="skipCGIntro()">跳过 ⏭</button>' +
+    '<div class="cg-title-reveal" id="cg-title-reveal"><div class="main">重生反诈</div><div class="sub">以牙还牙</div></div>';
+  slides.forEach(function(s, i){
+    var div = document.createElement('div');
+    div.className = 'cg-page';
+    div.id = 'cg-page-' + i;
+    div.innerHTML = '<img src="' + s.img + '" onerror="this.style.display=\'none\'">' +
+      '<div class="cg-vignette"></div>' +
+      '<div class="cg-caption">' + s.caption + '</div>' +
+      '<div class="cg-spine"></div>' +
+      '<div class="cg-shadow"></div>';
+    container.appendChild(div);
+  });
+  container.classList.add('active');
+  document.getElementById('audio-controls').classList.add('hidden-by-cg');
+
+  // 确保音频上下文初始化（用户已经点击了"开始新游戏"按钮）
+  initAudio();
+  if(AudioCtx && AudioCtx.state === 'suspended'){ AudioCtx.resume(); }
+
+  var idx = 0;
+  var pageTime = 2400; // 每页停留时间（若无本地男声语音则保持此节奏）
+  var cgStopped = false;
+
+  // 按页播放（每页对应一段康康男声本地WAV，播完才翻到下一页；跳过则立即停止）
+  function showPage(i){
+    if(cgStopped) return;
+    var cur = document.getElementById('cg-page-' + i);
+    if(cur){ cur.classList.add('current'); }
+    playSFX(i === 0 ? 'transition' : slides[i].sfx);
+
+    var wav = slides[i].wav;
+    // 优先播放本地语音旁白（.mp3优先→.wav回退）；跳过或不存在则用固定pageTime翻页
+    if(voiceEnabled && audioEnabled && wav){
+      var usedWav = false;
+      var mp3Ver = wav.replace(/\.wav$/, '.mp3');
+      function playCgVoice(file){
+        if(cgStopped) return;
+        usedWav = true;
+        var tmo = setTimeout(nextPage, 6200);
+        WavEngine.playWav(file, function(){
+          if(cgStopped) return;
+          clearTimeout(tmo);
+          setTimeout(nextPage, 350);
+        });
+      }
+      try{
+        WavEngine.fileExists(mp3Ver, function(exists){
+          if(cgStopped) return;
+          if(exists){ playCgVoice(mp3Ver); return; }
+          // mp3不存在，尝试wav
+          WavEngine.fileExists(wav, function(ex2){
+            if(cgStopped) return;
+            if(ex2){ playCgVoice(wav); return; }
+            // 都不存在：按固定节奏翻页
+            setTimeout(nextPage, pageTime);
+          });
+        });
+      }catch(e){ usedWav = false; }
+      if(!usedWav){ /* 异步等待 */ }
+    }else{
+      setTimeout(nextPage, pageTime);
+    }
+  }
+
+  function nextPage(){
+    if(cgStopped) return;
+    var prevEl = document.getElementById('cg-page-' + idx);
+    if(prevEl){ prevEl.classList.remove('current'); prevEl.classList.add('flipped'); }
+    idx++;
+    if(idx >= slides.length){
+      // 全部翻完 → 标题揭示
+      clearInterval(cgIntroTimer); cgIntroTimer = null;
+      var lastPage = document.getElementById('cg-page-' + (slides.length - 1));
+      if(lastPage){ lastPage.classList.remove('current'); lastPage.classList.add('flipped'); }
+      setTimeout(function(){
+        playSFX('achievement');
+        var tr = document.getElementById('cg-title-reveal');
+        if(tr){ tr.classList.add('active'); }
+        setTimeout(function(){
+          skipCGIntro();
+        }, 2800);
+      }, 800);
+      return;
+    }
+    playSFX('transition');
+    setTimeout(function(){ showPage(idx); }, 600);
+  }
+
+  cgIntroTimer = setInterval(function(){ /* 占位，供 skipCGIntro 清理逻辑判断 */ }, 9999999);
+  window.__cgStop = function(){ cgStopped = true; };
+
+  // 显示第一页
+  setTimeout(function(){
+    showPage(0);
+  }, 300);
+}
+
+var cgIntroTimer = null;
+function skipCGIntro(){
+  try{ if(window.__cgStop) window.__cgStop(); }catch(e){}
+  try{ if(WavEngine) WavEngine.stop(); }catch(e){}
+  if(cgIntroTimer){ clearInterval(cgIntroTimer); cgIntroTimer = null; }
+  var container = document.getElementById('cg-intro');
+  container.classList.remove('active');
+  document.getElementById('audio-controls').classList.remove('hidden-by-cg');
+  container.innerHTML = '<button class="cg-skip" onclick="skipCGIntro()">跳过 ⏭</button>';
+  newGame();
+  showScreen('game');
+  renderNode(game.node);
+  saveGame();
+}
+
+function continueGame(){
+  initAudio();
+  if(AudioCtx && AudioCtx.state === 'suspended') AudioCtx.resume();
+  if(loadGame()){
+    setBGMChapter(game.chapter);
+    startBGM();
+    showScreen('game');
+    renderNode(game.node);
+  } else {
+    showToast('没有存档', 'danger');
+  }
+}
+
+// ==================== 屏幕切换 ====================
+function showScreen(name){
+  var screens = document.querySelectorAll('.screen');
+  screens.forEach(function(s){ s.classList.remove('active'); });
+  var map = { title:'screen-title', game:'screen-game', ending:'screen-ending',
+              encyclopedia:'screen-encyclopedia', achievements:'screen-achievements' };
+  var el = document.getElementById(map[name] || map.title);
+  el.classList.add('active');
+  if(name === 'title') updateTitleScreen();
+  if(name === 'encyclopedia') renderEncyclopedia();
+  if(name === 'achievements') renderAchievements();
+  if(name === 'ending'){ stopBGM(); stopSpeech(); }
+  if(name === 'title' && audioEnabled) startBGM();
+  // 离开游戏场景时停止语音播报
+  if(name !== 'game') stopSpeech();
+}
+
+function updateTitleScreen(){
+  var btn = document.getElementById('btn-continue');
+  if(hasSave()) btn.classList.remove('disabled');
+  else btn.classList.add('disabled');
+}
+
+// ==================== 渲染状态栏 ====================
+function renderStatusBar(){
+  var s = game.stats;
+  var bar = document.getElementById('statusBar');
+  var alertPct = Math.max(0, Math.min(100, s.alertness));
+  var trustPct = Math.max(0, Math.min(100, s.trust));
+  var chapterName = game.chapter >= 0 ? CHAPTERS[game.chapter].title + '·' + CHAPTERS[game.chapter].name : '序章';
+  
+  bar.innerHTML =
+    '<div class="stat-chip assets"><span class="icon">💰</span><span class="val">¥' + formatNum(s.assets) + '</span></div>' +
+    '<div class="stat-chip alert' + (s.alertness < 20 ? ' low' : '') + '"><span class="icon">🛡️</span><span class="val">' + Math.round(s.alertness) + '</span>' +
+      '<div class="stat-bar"><div class="stat-bar-fill alert" style="width:' + alertPct + '%"></div></div></div>' +
+    '<div class="stat-chip trust"><span class="icon">🎭</span><span class="val">' + Math.round(s.trust) + '</span>' +
+      '<div class="stat-bar"><div class="stat-bar-fill trust" style="width:' + trustPct + '%"></div></div></div>' +
+    '<div class="stat-chip rebirth"><span class="icon">🔄</span><span class="val">' + game.rebirthCount + '</span></div>' +
+    '<div class="chapter-badge">' + chapterName + '</div>';
+}
+
+function formatNum(n){
+  return Math.round(n).toLocaleString('zh-CN');
+}
+
+// ==================== 渲染节点 ====================
+function renderNode(nodeId){
+  // 特殊处理
+  if(nodeId === 'rebirth'){ triggerRebirth(); return; }
+  if(nodeId === 'ending_check'){ checkEnding(); return; }
+  
+  var node = STORY[nodeId];
+  if(!node){ console.error('节点不存在:', nodeId); return; }
+  
+  game.node = nodeId;
+  saveGame();
+  
+  // 处理章节切换
+  if(node.choices){
+    for(var i=0; i<node.choices.length; i++){
+      if(node.choices[i].chapter !== undefined && node.choices[i].chapter >= 0){
+        // 标记待切换章节（在选定时处理）
+      }
+    }
+  }
+  
+  renderStatusBar();
+  renderScene(node, nodeId);
+  renderChoices(node);
+  playSFX('transition');
+}
+
+// ==================== 场景渲染 ====================
+function renderScene(node, nodeId){
+  var area = document.getElementById('sceneArea');
+  var scene = node.scene || 'narration';
+
+  // 切换场景时停止上一段语音，并使未执行的延迟朗读失效
+  stopSpeech();
+  speechScheduleId++;
+
+  if(scene === 'narration'){
+    area.innerHTML = renderNarration(node);
+    // 注意：即使是 system 旁白，若存在对应的 WAV 也要播放（否则只朗读人物台词）
+    var sp = node.avatar || '';
+    if(sp !== ''){
+      scheduleVoice(node.text, node.avatar, 600, nodeId);
+    }else{
+      scheduleVoice(node.text, 'system', 600, nodeId);
+    }
+  }
+  else if(scene === 'chat'){
+    area.innerHTML = renderChat(node);
+    playSFX('message');
+    scheduleChatVoice(node, nodeId);
+  }
+  else if(scene === 'call'){
+    area.innerHTML = renderCall(node);
+    playSFX('ring');
+    // 骗子来电台词朗读；"(我...)"/"（我...）"开头的台词是受害人自己说的
+    var selfTalk = /^[（(]我/.test(node.text || '');
+    scheduleVoice(node.text, selfTalk ? 'mc' : node.avatar, 900, nodeId);
+  }
+  else if(scene === 'transfer'){
+    area.innerHTML = renderTransfer(node);
+    playSFX('cash');
+  }
+  else if(scene === 'popup'){
+    area.innerHTML = renderPopup(node);
+    playSFX('message');
+    // 弹窗多为数据/权限表格，只朗读诈骗分子的"口头话术"
+    if(node.voice) scheduleVoice(node.voice, node.avatar, 700, nodeId);
+  }
+
+  // 滚到底部
+  setTimeout(function(){ area.scrollTop = area.scrollHeight; }, 50);
+}
+
+// 朗读延迟调度（避免与界面动画冲突）；场景切换后旧调度自动失效
+function scheduleVoice(text, avatar, delay, nodeId){
+  var myId = speechScheduleId;
+  setTimeout(function(){
+    if(myId !== speechScheduleId) return;
+    speakWithWav(nodeId || lastNodeId, text, avatar);
+  }, delay);
+}
+
+// 聊天消息逐条朗读：优先尝试 <nodeId>_<other|self>_<i>.wav
+function scheduleChatVoice(node, nodeId){
+  var msgs = node.messages || [];
+  var myId = speechScheduleId;
+  var t = 700;
+  msgs.forEach(function(m, i){
+    if(m.from === 'system') return; // 系统消息不朗读
+    var av = (m.from === 'self') ? 'mc' : (node.avatar || 'stranger');
+    (function(msg, prof, d, idx, fromTag){
+      setTimeout(function(){
+        if(myId !== speechScheduleId) return;
+        var hint = nodeId ? (nodeId + '_' + fromTag + '_' + idx + '.wav') : null;
+        speakWithWav(nodeId, msg, prof, hint);
+      }, d);
+    })(m.text, av, t, i, m.from);
+    t += Math.min(2600, Math.max(700, String(m.text).length * 110));
+  });
+}
+
+function renderNarration(node){
+  var html = '<div class="scene-narration">';
+  if(node.avatar) html += '<div class="narration-avatar">' + avatarSVG(node.avatar) + '</div>';
+  html += '<div class="narration-text">' + processText(node.text || '') + '</div>';
+  html += '</div>';
+  return html;
+}
+
+function renderChat(node){
+  var html = '<div class="scene-chat">';
+  // 聊天头
+  if(node.speaker){
+    html += '<div class="chat-header">' +
+      '<div class="av">' + avatarSVG(node.avatar || 'stranger') + '</div>' +
+      '<div class="name">' + node.speaker + '</div>' +
+      '<div class="status">在线</div></div>';
+  }
+  // 消息
+  var msgs = node.messages || (node.text ? [{from:'other', text:node.text}] : []);
+  msgs.forEach(function(m, i){
+    var delay = (i * 0.12).toFixed(2);
+    if(m.from === 'system'){
+      html += '<div class="chat-bubble system" style="animation-delay:' + delay + 's">' + m.text + '</div>';
+    } else {
+      html += '<div class="chat-row" style="animation-delay:' + delay + 's">';
+      if(m.from === 'other') html += '<div class="av">' + avatarSVG(node.avatar || 'stranger') + '</div>';
+      html += '<div class="chat-bubble ' + m.from + '">' + m.text + '</div>';
+      if(m.from === 'self') html += '<div class="av">' + avatarSVG('mc') + '</div>';
+      html += '</div>';
+    }
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderCall(node){
+  var html = '<div class="scene-call">';
+  html += '<div class="call-icon">' + avatarSVG(node.avatar || 'service') + '</div>';
+  html += '<div class="call-name">' + (node.caller || node.speaker || '未知号码') + '</div>';
+  if(node.number) html += '<div class="call-num">' + node.number + '</div>';
+  html += '<div class="call-timer">通话中...</div>';
+  html += '<div class="call-subtitle">' + processText(node.text || '') + '</div>';
+  html += '</div>';
+  return html;
+}
+
+function renderTransfer(node){
+  var html = '<div class="scene-transfer">';
+  html += '<div class="transfer-title">银行转账</div>';
+  html += '<div class="transfer-card">';
+  var lines = (node.text || '').split('\n');
+  lines.forEach(function(line){
+    var parts = line.split('：');
+    if(parts.length >= 2){
+      html += '<div class="transfer-row"><span class="transfer-label">' + parts[0] + '</span><span class="transfer-val">' + parts.slice(1).join('：') + '</span></div>';
+    }
+  });
+  html += '</div>';
+  if(node.warning) html += '<div class="transfer-warning">' + node.warning + '</div>';
+  html += '</div>';
+  return html;
+}
+
+function renderPopup(node){
+  var html = '<div class="scene-popup">';
+  html += '<div class="popup-phone">';
+  html += '<div class="popup-bar"><span>9:41</span><span>📶 🔋</span></div>';
+  html += '<div class="popup-notification">';
+  html += '<div class="popup-icon" style="background:' + (node.avatar === 'guru' ? '#d97706' : '#2563eb') + ';overflow:hidden">' + avatarSVG(node.avatar || 'system') + '</div>';
+  html += '<div class="popup-content">';
+  html += '<div class="title">' + (node.speaker || '通知') + '</div>';
+  html += '<div class="text">' + processText(node.text || '') + '</div>';
+  if(node.warning) html += '<div class="text" style="color:#f87171;margin-top:4px">' + node.warning + '</div>';
+  html += '</div></div></div></div>';
+  return html;
+}
+
+function processText(text){
+  // 将换行转为<br>，保留HTML标签（内容可控，无注入风险）
+  return String(text).replace(/\n/g, '<br>');
+}
+
+// ==================== 渲染选项 ====================
+function renderChoices(node){
+  var area = document.getElementById('choiceArea');
+  var choices = node.choices || [];
+  
+  if(choices.length === 0){
+    area.innerHTML = '';
+    return;
+  }
+  
+  var html = '';
+  choices.forEach(function(ch, i){
+    var cls = 'choice-btn';
+    if(ch.tipClass) cls += ' ' + ch.tipClass;
+    
+    // 检查解锁条件
+    var locked = false;
+    var lockText = '';
+    if(ch.requires && ch.requires.alertness){
+      if(game.stats.alertness < ch.requires.alertness){
+        locked = true;
+        lockText = '🔒 需警惕值' + ch.requires.alertness;
+      }
+    }
+    if(locked) cls += ' locked';
+    
+    html += '<button class="' + cls + '" style="animation-delay:' + (i * 0.06) + 's" ' +
+      (locked ? 'disabled' : 'onclick="makeChoice(' + i + ')"') + '>';
+    html += '<span>' + ch.text + '</span>';
+    if(locked) html += '<span class="lock">' + lockText + '</span>';
+    else html += '<span class="arrow">›</span>';
+    html += '</button>';
+  });
+  area.innerHTML = html;
+}
+
+// ==================== 选择处理 ====================
+function makeChoice(index){
+  playSFX('click');
+  var node = STORY[game.node];
+  if(!node || !node.choices || !node.choices[index]) return;
+  var ch = node.choices[index];
+  
+  // 应用数值变化
+  if(ch.effects){
+    if(ch.effects.assets !== undefined) game.stats.assets += ch.effects.assets;
+    if(ch.effects.alertness !== undefined) game.stats.alertness += ch.effects.alertness;
+    if(ch.effects.trust !== undefined) game.stats.trust += ch.effects.trust;
+  }
+  // 数值钳制
+  game.stats.alertness = Math.max(0, Math.min(100, game.stats.alertness));
+  game.stats.trust = Math.max(0, Math.min(100, game.stats.trust));
+  
+  // 反击计数
+  if(ch.counter){
+    game.counterCount++;
+    showCounterFlash();
+    playSFX('counter');
+    if(game.counterCount >= 1) unlockAchievement('a3');
+    if(game.counterCount >= 3) unlockAchievement('a4');
+    if(game.counterCount >= 10) unlockAchievement('a5');
+  }
+  
+  // 解锁知识
+  if(ch.unlockKnowledge) unlockKnowledge(ch.unlockKnowledge);
+  
+  // 解锁成就
+  if(ch.unlockAchievement) unlockAchievement(ch.unlockAchievement);
+  
+  // 显示提示
+  if(ch.tip) showToast(ch.tip, ch.tipType || '');
+  
+  // 音效
+  if(ch.tipType === 'success') playSFX('success');
+  else if(ch.tipType === 'danger') playSFX('danger');
+  
+  // 章节切换
+  if(ch.chapter !== undefined && ch.chapter >= 0){
+    game.chapter = ch.chapter;
+    game.checkpointStats = Object.assign({}, game.stats);
+    saveGame();
+    // 切换 BGM 氛围
+    setBGMChapter(ch.chapter);
+  }
+  
+  // 触发结局
+  if(ch.ending){
+    setTimeout(function(){ showEnding(ch.ending); }, 800);
+    return;
+  }
+  
+  // 触发重生
+  if(ch.rebirth){
+    setTimeout(function(){ triggerRebirth(); }, 800);
+    return;
+  }
+  
+  // 更新状态栏
+  renderStatusBar();
+  
+  // 跳转下一节点
+  setTimeout(function(){ renderNode(ch.next); }, ch.tip ? 1200 : 400);
+}
+
+// ==================== 重生机制 ====================
+function triggerRebirth(){
+  stopSpeech();
+  playSFX('rebirth');
+  game.rebirthCount++;
+  meta.totalRebirths = (meta.totalRebirths || 0) + 1;
+  
+  // 章节重生计数
+  var chId = game.chapter >= 0 ? CHAPTERS[game.chapter].id : 'prologue';
+  game.chapterRebirths[chId] = (game.chapterRebirths[chId] || 0) + 1;
+  
+  // 重生加成
+  game.stats.alertness = Math.min(100, game.stats.alertness + CONFIG.rebirthAlertnessBonus);
+  
+  // 恢复检查点
+  if(game.checkpointStats){
+    game.stats.assets = game.checkpointStats.assets;
+    game.stats.trust = game.checkpointStats.trust;
+    // 警惕值保留（包含重生加成）
+  } else {
+    game.stats = Object.assign({}, CONFIG.initialStats);
+  }
+  
+  // 成就
+  unlockAchievement('a1');
+  if(meta.totalRebirths >= 5) unlockAchievement('a9');
+  
+  saveMeta();
+  saveGame();
+  
+  // 播放重生动画
+  playRebirthAnimation(function(){
+    // 提示
+    if(game.chapterRebirths[chId] >= CONFIG.hintAfterRebirths){
+      showToast('提示：选择"将计就计"选项需要更高的警惕值。正确识破骗局可提升警惕值。', 'gold');
+    } else {
+      showToast('重生成功！警惕值 +' + CONFIG.rebirthAlertnessBonus, 'gold');
+    }
+    
+    // 回到章节开始
+    var startNode = game.chapter >= 0 ? CHAPTERS[game.chapter].startNode : 'prologue_01';
+    renderNode(startNode);
+  });
+}
+
+// ==================== 结局判定 ====================
+function checkEnding(){
+  stopSpeech();
+  game.gameCompleted = true;
+  meta.gameCompleted = true;
+  
+  // 完成全部章节成就
+  unlockAchievement('a10');
+  
+  var assets = game.stats.assets;
+  var rebirths = game.rebirthCount;
+  var counters = game.counterCount;
+  
+  // 检查全知识解锁
+  var allKnowledge = Object.keys(KNOWLEDGE).every(function(k){
+    return game.unlockedKnowledge.indexOf(k) >= 0 || meta.unlockedKnowledge.indexOf(k) >= 0;
+  });
+  if(allKnowledge) unlockAchievement('a7');
+  
+  // 无重生通关
+  if(rebirths === 0) unlockAchievement('a6');
+  
+  // 资产达标
+  if(assets >= 50000) unlockAchievement('a8');
+  
+  saveMeta();
+  saveGame();
+  
+  var ending;
+  if(assets >= 50000 && counters >= 7 && rebirths === 0) ending = 'perfect';
+  else if(assets >= 30000 && counters >= 4) ending = 'good';
+  else if(assets > 0) ending = 'normal';
+  else ending = 'bad';
+  
+  showEnding(ending);
+}
+
+function showEnding(type){
+  var endings = {
+    perfect: {
+      badge:'★ 完美结局 ★', badgeColor:'#fbbf24',
+      title:'反诈先锋 · 以牙还牙',
+      text:'你成功识破了全部十种电信诈骗，\n每一次都将计就计，反击骗子，\n不仅保全了自己的全部财产，\n还协助警方捣毁了多个诈骗团伙。\n\n96110反诈中心授予你"反诈先锋"称号！\n\n你的故事，将警醒更多人。',
+      bg:'linear-gradient(135deg,#0f1923,#1e3a5f,#0f1923)',
+    },
+    good: {
+      badge:'☆ 优秀结局 ☆', badgeColor:'#4ade80',
+      title:'反诈卫士',
+      text:'你成功识破了大部分骗局，\n多次反击骗子，保护了自己和朋友的财产。\n虽然过程中有些波折，\n但你用行动证明了——\n知识就是力量，警觉就是盾牌。\n\n下载国家反诈中心APP，持续守护财产安全。',
+      bg:'linear-gradient(135deg,#0f1923,#14532d,#0f1923)',
+    },
+    normal: {
+      badge:'○ 普通结局 ○', badgeColor:'#60a5fa',
+      title:'平安是福',
+      text:'你走过了重重骗局，\n虽然经历了一些损失和重生，\n但最终还是挺了过来。\n\n反诈之路任重道远，\n每一次经历都是宝贵的财富。\n\n记住：96110，遇到诈骗立即拨打。',
+      bg:'linear-gradient(135deg,#0f1923,#1e3a5f,#0f1923)',
+    },
+    bad: {
+      badge:'△ 轮回结局 △', badgeColor:'#f87171',
+      title:'轮回不止',
+      text:'虽然经历了多次重生和损失，\n但你从未放弃。\n\n每一次跌倒，都是站起来的开始。\n\n记住这些教训：\n不轻信、不转账、不泄露验证码。\n下载国家反诈中心APP，\n开启来电预警，守护财产安全。\n\n96110，全国反诈专线。',
+      bg:'linear-gradient(135deg,rgba(15,25,35,.85),rgba(127,29,29,.85),rgba(15,25,35,.85)),url(\'avatars/ending_bad.jpg\') center/cover',
+    },
+  };
+  
+  var e = endings[type] || endings.normal;
+  var s = game.stats;
+  
+  var html = '<div style="background:' + e.bg + ';min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;color:#fff;">';
+  html += '<div class="ending-badge" style="color:' + e.badgeColor + '">' + e.badge + '</div>';
+  html += '<div class="ending-title" style="color:' + e.badgeColor + '">' + e.title + '</div>';
+  html += '<div class="ending-text" style="color:#cbd5e1">' + e.text.replace(/\n/g,'<br>') + '</div>';
+  html += '<div class="ending-stats">';
+  html += '<div class="ending-stat"><div class="v" style="color:#fbbf24">¥' + formatNum(s.assets) + '</div><div class="l">最终资产</div></div>';
+  html += '<div class="ending-stat"><div class="v" style="color:#4ade80">' + Math.round(s.alertness) + '</div><div class="l">警惕值</div></div>';
+  html += '<div class="ending-stat"><div class="v" style="color:#60a5fa">' + game.counterCount + '</div><div class="l">反击次数</div></div>';
+  html += '<div class="ending-stat"><div class="v" style="color:#f87171">' + game.rebirthCount + '</div><div class="l">重生次数</div></div>';
+  html += '</div>';
+  
+  // 知识收集进度
+  var knowledgeCount = game.unlockedKnowledge.length + meta.unlockedKnowledge.filter(function(k){
+    return game.unlockedKnowledge.indexOf(k) < 0;
+  }).length;
+  knowledgeCount = Math.min(10, knowledgeCount);
+  html += '<div style="font-size:13px;color:#64748b;margin-bottom:20px">反诈知识收录：' + knowledgeCount + '/10　成就解锁：' + countAchievements() + '/' + Object.keys(ACHIEVEMENTS).length + '</div>';
+  
+  // 反诈宣传
+  html += '<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;margin-bottom:24px;max-width:320px">';
+  html += '<div style="font-size:24px;font-weight:900;color:#f87171;letter-spacing:3px">96110</div>';
+  html += '<div style="font-size:12px;color:#94a3b8;margin-top:4px">全国反诈劝阻专线 · 遇到诈骗立即拨打</div>';
+  html += '<div style="font-size:12px;color:#60a5fa;margin-top:8px">📱 下载"国家反诈中心"APP 开启来电预警</div>';
+  html += '<div style="font-size:11px;color:#64748b;margin-top:8px;border-top:1px solid rgba(239,68,68,.15);padding-top:8px">遇到可疑电信诈骗，请拨打 96110 咨询举报<br>下载国家反诈中心 APP 防范电信网络诈骗</div>';
+  html += '</div>';
+  
+  html += '<div class="ending-btns">';
+  html += '<button class="btn-menu primary" onclick="startNewGame()" style="width:auto;padding:12px 28px">重新开始</button>';
+  html += '<button class="btn-menu secondary" onclick="showScreen(\'encyclopedia\')" style="width:auto;padding:12px 28px">查看图鉴</button>';
+  html += '<button class="btn-menu secondary" onclick="showScreen(\'achievements\')" style="width:auto;padding:12px 28px">查看成就</button>';
+  html += '</div></div>';
+  
+  var screen = document.getElementById('screen-ending');
+  screen.innerHTML = html;
+  showScreen('ending');
+}
+
+// ==================== 知识解锁 ====================
+function unlockKnowledge(id){
+  if(game.unlockedKnowledge.indexOf(id) < 0){
+    game.unlockedKnowledge.push(id);
+  }
+  if(meta.unlockedKnowledge.indexOf(id) < 0){
+    meta.unlockedKnowledge.push(id);
+    saveMeta();
+  }
+  // 弹出知识窗
+  showKnowledgePopup(id);
+  playSFX('alert');
+}
+
+function showKnowledgePopup(id){
+  var k = KNOWLEDGE[id];
+  if(!k) return;
+  
+  var html = '<div class="modal-card">';
+  html += '<div class="modal-header"><div class="badge">反诈知识 · 已收录</div><div class="title">' + k.icon + ' ' + k.type + '</div></div>';
+  html += '<div class="modal-body">';
+  html += '<p style="font-size:13px;color:#64748b;line-height:1.7">' + k.desc + '</p>';
+  html += '<h4>🚩 识别要点</h4><ul>';
+  k.redFlags.forEach(function(f){ html += '<li>' + f + '</li>'; });
+  html += '</ul>';
+  html += '<h4>🛡️ 防骗建议</h4><ul>';
+  k.advice.forEach(function(a){ html += '<li>' + a + '</li>'; });
+  html += '</ul>';
+  html += '<div class="hotline"><div class="num">96110</div><div class="desc">全国反诈劝阻专线</div></div>';
+  html += '<div class="app-promo">📱 下载"国家反诈中心"APP<br>开启来电预警，守护财产安全</div>';
+  html += '<div class="knowledge-footer-tip">';
+  html += '<div class="tip-main">遇到可疑电信诈骗，请拨打 <span class="tip-hotline" style="display:inline">96110</span> 咨询举报</div>';
+  html += '<div class="tip-app">📱 下载国家反诈中心 APP 防范电信网络诈骗</div>';
+  html += '</div>';
+  html += '<button class="modal-close" onclick="closeKnowledgePopup()">已了解</button>';
+  html += '</div></div>';
+  
+  var popup = document.getElementById('knowledgePopup');
+  popup.innerHTML = html;
+  popup.classList.remove('hidden');
+}
+
+function closeKnowledgePopup(){
+  document.getElementById('knowledgePopup').classList.add('hidden');
+}
+
+// ==================== 成就系统 ====================
+function unlockAchievement(id){
+  if(game.unlockedAchievements.indexOf(id) >= 0) return;
+  game.unlockedAchievements.push(id);
+  
+  var isNew = meta.unlockedAchievements.indexOf(id) < 0;
+  if(isNew){
+    meta.unlockedAchievements.push(id);
+    saveMeta();
+    // 显示成就弹窗
+    showAchievementPopup(id);
+    playSFX('achievement');
+  }
+}
+
+function showAchievementPopup(id){
+  var a = ACHIEVEMENTS[id];
+  if(!a) return;
+  var popup = document.createElement('div');
+  popup.className = 'achievement-popup';
+  popup.innerHTML = '<div class="ach-icon">' + a.icon + '</div><div class="ach-info"><div class="label">成就解锁</div><div class="name">' + a.name + '</div></div>';
+  document.body.appendChild(popup);
+  setTimeout(function(){ popup.style.transition = 'opacity .5s, transform .5s'; popup.style.opacity = '0'; popup.style.transform = 'translateX(-50%) translateY(-20px)'; setTimeout(function(){ popup.remove(); }, 500); }, 2500);
+}
+
+function countAchievements(){
+  var all = game.unlockedAchievements.concat(meta.unlockedAchievements);
+  return new Set(all).size;
+}
+
+// ==================== 图鉴界面 ====================
+function renderEncyclopedia(){
+  var grid = document.getElementById('encGrid');
+  var allKeys = Object.keys(KNOWLEDGE);
+  var unlocked = game.unlockedKnowledge.concat(meta.unlockedKnowledge);
+  
+  var html = '';
+  allKeys.forEach(function(key){
+    var k = KNOWLEDGE[key];
+    var isUnlocked = unlocked.indexOf(key) >= 0;
+    html += '<div class="enc-card' + (isUnlocked ? '' : ' locked') + '">';
+    html += '<div class="enc-type">' + (isUnlocked ? k.type : '???') + '</div>';
+    html += '<div class="enc-name">' + (isUnlocked ? k.icon + ' ' + k.type : '🔒 未解锁') + '</div>';
+    if(isUnlocked){
+      html += '<div class="enc-desc">' + k.desc + '</div>';
+      html += '<div style="margin-top:8px;font-size:12px;color:#fbbf24">🚩 ' + k.redFlags.length + '个识别要点 · 🛡️ ' + k.advice.length + '条防骗建议</div>';
+    } else {
+      html += '<div class="enc-desc">在游戏中识破此类骗局即可解锁</div>';
+    }
+    html += '</div>';
+  });
+  
+  // 反诈宣传
+  html += '<div class="enc-card" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.05)">';
+  html += '<div class="enc-type">反诈专线</div>';
+  html += '<div class="enc-name">📞 96110</div>';
+  html += '<div class="enc-desc">全国反诈劝阻专线。遇到可疑电话、短信、链接，立即拨打96110咨询核实。</div>';
+  html += '<div style="margin-top:8px;font-size:12px;color:#60a5fa">📱 下载"国家反诈中心"APP，开启来电预警</div>';
+  html += '<div style="margin-top:6px;font-size:11px;color:#94a3b8;border-top:1px solid rgba(255,255,255,.06);padding-top:6px">遇到可疑电信诈骗，请拨打 96110 咨询举报<br>下载国家反诈中心 APP 防范电信网络诈骗</div>';
+  html += '</div>';
+  
+  grid.innerHTML = html;
+}
+
+// ==================== 成就界面 ====================
+function renderAchievements(){
+  var grid = document.getElementById('achGrid');
+  var unlocked = game.unlockedAchievements.concat(meta.unlockedAchievements);
+  
+  var html = '';
+  Object.keys(ACHIEVEMENTS).forEach(function(key){
+    var a = ACHIEVEMENTS[key];
+    var isUnlocked = unlocked.indexOf(key) >= 0;
+    html += '<div class="ach-card' + (isUnlocked ? ' unlocked' : ' locked') + '">';
+    html += '<div class="ach-icon-lg">' + (isUnlocked ? a.icon : '🔒') + '</div>';
+    html += '<div><div class="ach-name">' + a.name + '</div><div class="ach-desc">' + (isUnlocked ? a.desc : '未解锁') + '</div></div>';
+    html += '</div>';
+  });
+  
+  grid.innerHTML = html;
+}
+
+// ==================== Toast提示 ====================
+var toastTimer = null;
+function showToast(msg, type){
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + (type || '');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ toast.classList.add('hidden'); }, 2000);
+}
+
+// ==================== 反击特效 ====================
+function showCounterFlash(){
+  var flash = document.createElement('div');
+  flash.className = 'counter-flash';
+  flash.innerHTML = '<span>以牙还牙</span>';
+  document.body.appendChild(flash);
+  setTimeout(function(){ flash.remove(); }, 1800);
+}
+
+// ==================== 背景粒子Canvas ====================
+function initBackgroundCanvas(){
+  var canvas = document.getElementById('bgCanvas');
+  var ctx = canvas.getContext('2d');
+  
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  
+  var particles = [];
+  var count = window.innerWidth < 480 ? 25 : 45;
+  for(var i = 0; i < count; i++){
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 1.5 + 0.5,
+      o: Math.random() * 0.25 + 0.05,
+      hue: Math.random() > 0.5 ? '100,150,255' : '80,120,220',
+    });
+  }
+  
+  function animate(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(function(p){
+      p.x += p.vx; p.y += p.vy;
+      if(p.x < 0) p.x = canvas.width;
+      if(p.x > canvas.width) p.x = 0;
+      if(p.y < 0) p.y = canvas.height;
+      if(p.y > canvas.height) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + p.hue + ',' + p.o + ')';
+      ctx.fill();
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+// ==================== 重生动画Canvas ====================
+function playRebirthAnimation(callback){
+  var canvas = document.getElementById('rebirthCanvas');
+  var ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+  
+  var cx = canvas.width / 2;
+  var cy = canvas.height / 2;
+  var particles = [];
+  var count = 80;
+  
+  for(var i = 0; i < count; i++){
+    var angle = (i / count) * Math.PI * 2 * 4;
+    var radius = 200 + Math.random() * 150;
+    particles.push({
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+      tx: cx, ty: cy,
+      r: Math.random() * 2.5 + 0.5,
+      o: 1,
+      speed: 0.02 + Math.random() * 0.03,
+    });
+  }
+  
+  var frame = 0;
+  var totalFrames = 100;
+  
+  function animate(){
+    var progress = frame / totalFrames;
+    
+    // 渐变背景
+    ctx.fillStyle = 'rgba(15, 25, 35, ' + Math.min(progress * 3, 1) + ')';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if(frame < 70){
+      particles.forEach(function(p){
+        p.x += (p.tx - p.x) * p.speed;
+        p.y += (p.ty - p.y) * p.speed;
+        p.o = 1 - progress;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(100, 180, 255, ' + p.o + ')';
+        ctx.fill();
+      });
+    }
+    
+    // 中央光圈
+    if(frame >= 40){
+      var glowR = (frame - 40) * 8;
+      var glowO = Math.max(0, 1 - (frame - 40) / 30);
+      var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+      grad.addColorStop(0, 'rgba(100, 200, 255, ' + glowO + ')');
+      grad.addColorStop(1, 'rgba(100, 200, 255, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    // 重生文字
+    if(frame >= 50 && frame < 90){
+      var textO = Math.min(1, (frame - 50) / 10) * Math.max(0, 1 - (frame - 75) / 15);
+      ctx.fillStyle = 'rgba(255, 255, 255, ' + textO + ')';
+      ctx.font = 'bold ' + Math.min(48, canvas.width * 0.12) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('重 生', cx, cy);
+      
+      ctx.font = '14px sans-serif';
+      ctx.fillStyle = 'rgba(150, 200, 255, ' + textO + ')';
+      ctx.fillText('记忆已留存 · 警惕值提升', cx, cy + 40);
+    }
+    
+    // 淡出
+    if(frame >= 85){
+      ctx.fillStyle = 'rgba(15, 25, 35, ' + ((frame - 85) / 15) + ')';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    frame++;
+    if(frame < totalFrames){
+      requestAnimationFrame(animate);
+    } else {
+      canvas.style.display = 'none';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if(callback) callback();
+    }
+  }
+  animate();
+}
+
+/* ============================================================
+   音效框架（预留接口，后续添加音效时使用）
+   ============================================================
+   var SoundManager = {
+     ctx: null,
+     init: function(){
+       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+     },
+     play: function(type){
+       if(!this.ctx) this.init();
+       // 音效类型：
+       // 'click'    — 按钮点击
+       // 'correct'  — 正确选择
+       // 'wrong'    — 错误选择
+       // 'rebirth'  — 重生音效
+       // 'counter'  — 反击成功
+       // 'unlock'   — 知识解锁
+       // 'achievement' — 成就解锁
+       // 'ending'   — 结局音乐
+       // 示例（简单蜂鸣）：
+       // var osc = this.ctx.createOscillator();
+       // var gain = this.ctx.createGain();
+       // osc.connect(gain); gain.connect(this.ctx.destination);
+       // osc.frequency.value = 800; gain.gain.value = 0.1;
+       // osc.start(); osc.stop(this.ctx.currentTime + 0.1);
+     },
+   };
+   // 使用：SoundManager.play('click');
+   ============================================================ */
+
+// ==================== 初始化 ====================
+function init(){
+  loadMeta();
+  initBackgroundCanvas();
+  updateTitleScreen();
+  
+  // 阻止双击缩放
+  document.addEventListener('touchend', function(e){
+    var now = Date.now();
+    if(now - (this.lastTouch || 0) < 350) e.preventDefault();
+    this.lastTouch = now;
+  }, { passive: false });
+  
+  // 阻止手势缩放
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+}
+
+// ==================== 分享游戏 ====================
+function shareGame(){
+  var url = window.location.href;
+  var title = '重生反诈：以牙还牙 — 你能识破所有骗局吗？';
+  var text = '🎮 重生反诈：以牙还牙\n10种真实电信诈骗场景，重生反击，守护财产！\n96110 全国反诈热线\n';
+  // 微信内置浏览器：navigator.share 不可用，execCommand 复制剪贴板也常被拦截。
+  // 最稳妥的做法是引导用户使用微信原生的「右上角 ··· 分享」。
+  if(/MicroMessenger/i.test(navigator.userAgent)){
+    showToast('请点击右上角 ··· 分享给好友或朋友圈', 'info');
+    return;
+  }
+  if(navigator.share){
+    navigator.share({ title:title, text:text, url:url }).catch(function(){});
+  } else {
+    // 复制到剪贴板
+    var input = document.createElement('textarea');
+    input.value = text + url;
+    document.body.appendChild(input);
+    input.select();
+    try{ document.execCommand('copy'); showToast('链接已复制到剪贴板', 'success'); }catch(e){}
+    document.body.removeChild(input);
+  }
+}
+
+// ==================== 资源预加载 ====================
+function preloadAssets(){
+  var imgs = [
+    'avatars/mc.png','avatars/stranger.png','avatars/service.png',
+    'avatars/guru.png','avatars/loaner.png','avatars/buyer.png',
+    'avatars/prosecutor.png','avatars/friend.png','avatars/police.png',
+    'avatars/service_scam.png','avatars/porn_scam.png','avatars/romance_scam.png',
+    'avatars/victim.png','avatars/title_bg.jpg',
+    'avatars/cg_intro_1.jpg','avatars/cg_intro_2.jpg','avatars/cg_intro_3.jpg','avatars/cg_intro_4.jpg',
+    'avatars/cg_intro_5.jpg','avatars/cg_intro_6.jpg','avatars/cg_intro_8.jpg',
+    'avatars/ending_bad.jpg',
+  ];
+  // 离线本地语音（CG序幕 + 序章 + 章节主要节点）：.mp3(神经语音)和.wav(SSML增强)都检查
+  var wavs = [
+    // CG序幕旁白
+    'voice/cg_01.mp3','voice/cg_01.wav','voice/cg_02.mp3','voice/cg_02.wav',
+    'voice/cg_03.mp3','voice/cg_03.wav','voice/cg_04.mp3','voice/cg_04.wav',
+    'voice/cg_05.mp3','voice/cg_05.wav','voice/cg_06.mp3','voice/cg_06.wav',
+    'voice/cg_07.mp3','voice/cg_07.wav',
+    // 序章
+    'voice/prologue_01.mp3','voice/prologue_01.wav','voice/prologue_02.mp3','voice/prologue_02.wav',
+    'voice/prologue_03.mp3','voice/prologue_03.wav','voice/prologue_04.mp3','voice/prologue_04.wav',
+    'voice/prologue_05.mp3','voice/prologue_05.wav',
+  ];
+  var loaded = 0;
+  var total = imgs.length + wavs.length;
+  var fill = document.getElementById('loading-bar-fill');
+  var txt = document.getElementById('loading-text');
+
+  function tick(src){
+    loaded++;
+    var pct = Math.min(100, Math.round(loaded / total * 100));
+    if(fill) fill.style.width = pct + '%';
+    if(txt) txt.textContent = (loaded < total ? ('加载资源... ' + pct + '%') : '加载完成 点击进入游戏');
+    if(loaded >= total){
+      setTimeout(function(){
+        var ls = document.getElementById('loading-screen');
+        if(ls){ ls.classList.add('done'); setTimeout(function(){ if(ls) ls.style.display = 'none'; }, 600); }
+      }, 200);
+    }
+  }
+
+  imgs.forEach(function(src){
+    var img = new Image();
+    img.onload = img.onerror = function(){ tick(src); };
+    img.src = src;
+  });
+
+  wavs.forEach(function(src){
+    // 使用 fetch HEAD 判定存在 → 存在则GET入WavEngine缓存（省内存，WAV不强制全部解码）
+    fetch(src, {method:'HEAD'}).then(function(r){
+      if(r.ok){
+        // 标记为"存在"，避免WavEngine再发一次HEAD
+        if(window.WavEngine) WavEngine._known[src.replace(/^voice\//,'')] = true;
+      }
+      tick(src);
+    }).catch(function(){ tick(src); });
+  });
+}
+
+// 启动
+init();
+preloadAssets();
+</script>
+</body>
+</html>
