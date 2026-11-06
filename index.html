@@ -881,19 +881,27 @@ var WavEngine = {
   },
 
   // 加载 AudioBuffer（带缓存）
+  // 优先使用体积更小的 .mp3（约为 .wav 的 1/6），解码失败再回退 .wav
   loadBuffer: function(rel, cb){
-    var url = this.root + rel + '?v=' + (window.__voiceVersion || 1);
-    if(this.cache[url]){ cb(null, this.cache[url]); return; }
-    fetch(url)
-      .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.arrayBuffer(); })
-      .then(function(ab){
-        if(!AudioCtx){ cb(new Error('no AudioCtx')); return; }
-        AudioCtx.decodeAudioData(ab.slice(0), function(buf){
-          WavEngine.cache[url] = buf;
-          cb(null, buf);
-        }, function(e){ cb(e); });
-      })
-      .catch(function(e){ cb(e); });
+    var ver = '?v=' + (window.__voiceVersion || 1);
+    var base = this.root + rel;
+    var mp3 = base.replace(/\.wav$/i, '.mp3') + ver;
+    var wav = base + ver;
+    var self = this;
+    function tryUrl(url, onFail){
+      if(self.cache[url]){ cb(null, self.cache[url]); return; }
+      fetch(url)
+        .then(function(r){ if(!r.ok) throw new Error('http ' + r.status); return r.arrayBuffer(); })
+        .then(function(ab){
+          if(!AudioCtx){ cb(new Error('no AudioCtx')); return; }
+          AudioCtx.decodeAudioData(ab.slice(0), function(buf){
+            self.cache[url] = buf;
+            cb(null, buf);
+          }, function(){ onFail(); });
+        })
+        .catch(function(){ onFail(); });
+    }
+    tryUrl(mp3, function(){ tryUrl(wav, function(){ cb(new Error('load fail ' + rel)); }); });
   },
 
   // 播放一个wav，完成后调用done()
@@ -3708,30 +3716,16 @@ function shareGame(){
 
 // ==================== 资源预加载 ====================
 function preloadAssets(){
+  // 仅预载首屏必需资源，其余图片/语音在对应场景出现时按需加载，显著加快首屏
   var imgs = [
-    'avatars/mc.png','avatars/stranger.png','avatars/service.png',
-    'avatars/guru.png','avatars/loaner.png','avatars/buyer.png',
-    'avatars/prosecutor.png','avatars/friend.png','avatars/police.png',
-    'avatars/service_scam.png','avatars/porn_scam.png','avatars/romance_scam.png',
-    'avatars/victim.png','avatars/title_bg.jpg',
+    'avatars/title_bg.jpg',
+    'avatars/mc.png','avatars/victim.png',
     'avatars/cg_intro_1.jpg','avatars/cg_intro_2.jpg','avatars/cg_intro_3.jpg','avatars/cg_intro_4.jpg',
     'avatars/cg_intro_5.jpg','avatars/cg_intro_6.jpg','avatars/cg_intro_8.jpg',
     'avatars/ending_bad.jpg',
   ];
-  // 离线本地语音（CG序幕 + 序章 + 章节主要节点）：.mp3(神经语音)和.wav(SSML增强)都检查
-  var wavs = [
-    // CG序幕旁白
-    'voice/cg_01.mp3','voice/cg_01.wav','voice/cg_02.mp3','voice/cg_02.wav',
-    'voice/cg_03.mp3','voice/cg_03.wav','voice/cg_04.mp3','voice/cg_04.wav',
-    'voice/cg_05.mp3','voice/cg_05.wav','voice/cg_06.mp3','voice/cg_06.wav',
-    'voice/cg_07.mp3','voice/cg_07.wav',
-    // 序章
-    'voice/prologue_01.mp3','voice/prologue_01.wav','voice/prologue_02.mp3','voice/prologue_02.wav',
-    'voice/prologue_03.mp3','voice/prologue_03.wav','voice/prologue_04.mp3','voice/prologue_04.wav',
-    'voice/prologue_05.mp3','voice/prologue_05.wav',
-  ];
   var loaded = 0;
-  var total = imgs.length + wavs.length;
+  var total = imgs.length;
   var fill = document.getElementById('loading-bar-fill');
   var txt = document.getElementById('loading-text');
 
@@ -3752,17 +3746,6 @@ function preloadAssets(){
     var img = new Image();
     img.onload = img.onerror = function(){ tick(src); };
     img.src = src;
-  });
-
-  wavs.forEach(function(src){
-    // 使用 fetch HEAD 判定存在 → 存在则GET入WavEngine缓存（省内存，WAV不强制全部解码）
-    fetch(src, {method:'HEAD'}).then(function(r){
-      if(r.ok){
-        // 标记为"存在"，避免WavEngine再发一次HEAD
-        if(window.WavEngine) WavEngine._known[src.replace(/^voice\//,'')] = true;
-      }
-      tick(src);
-    }).catch(function(){ tick(src); });
   });
 }
 
