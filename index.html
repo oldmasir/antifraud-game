@@ -912,8 +912,8 @@ var WavEngine = {
     if(AudioCtx.state === 'suspended'){ AudioCtx.resume(); }
     var myGen = WavEngine.gen;   // 记录开始加载时的代次
     this.loadBuffer(rel, function(err, buf){
-      // 切页已发生（gen 变化）→ 丢弃这条在途语音，避免旧页声音漏播
-      if(err || myGen !== WavEngine.gen){ done && done(err); return; }
+      if(myGen !== WavEngine.gen){ done && done('__ABORT__'); return; } // 切页，静默放弃
+      if(err){ done && done(err); return; } // 真实加载失败
       var src = AudioCtx.createBufferSource();
       var gain = AudioCtx.createGain();
       gain.gain.value = 0.95;
@@ -938,58 +938,47 @@ var WavEngine = {
     this.busy = false;
   },
 
-  // 入队播放（按顺序）
-  enqueue: function(items, allDone){
+  // 入队播放（按顺序）。onItemFail(rel, err) 在单个文件真实加载失败时回调（切页 __ABORT__ 不触发）
+  enqueue: function(items, allDone, onItemFail){
     // items: [{rel:'xxx.wav'}]  每一项是wav相对路径
     var self = this;
     self.wavQueue = self.wavQueue.concat(items);
+    self._itemFail = onItemFail || self._itemFail;
     if(self.busy){ if(allDone) self._finalAllDone = allDone; return; }
     self.busy = true;
     function next(){
       if(!self.wavQueue.length){
         self.busy = false;
         var f = self._finalAllDone; self._finalAllDone = null;
+        self._itemFail = null;
         f && f(); allDone && allDone();
         return;
       }
       var it = self.wavQueue.shift();
-      self.playWav(it.rel, function(){ next(); });
+      self.playWav(it.rel, function(err){
+        if(err && err !== '__ABORT__' && self._itemFail) self._itemFail(it.rel, err);
+        next();
+      });
     }
     next();
   }
 };
 
-// 主入口：给定 nodeId + 文本 + 头像 → 优先播放本地WAV，失败则走Web TTS
+// 主入口：给定 nodeId + 文本 + 头像 → 优先播放本地语音，失败则走Web TTS
 // 可选 hint 是一个优先匹配的 wav 文件名（不含路径），用于 CG 序幕等特殊场景
 function speakWithWav(nodeId, text, avatar, hint){
   if(!voiceEnabled) return;
   if(!audioEnabled) return;
-  // 候选顺序：hint(.mp3→.wav) → <nodeId>.mp3 → <nodeId>.wav
-  var candidates = [];
-  if(hint){
-    // hint 如果以 .wav 结尾，也尝试 .mp3 版本（edge-tts神经语音优先）
-    if(hint.endsWith('.wav')){
-      candidates.push(hint.replace(/\.wav$/, '.mp3'));
-    }
-    candidates.push(hint);
-  }
-  if(nodeId){
-    candidates.push(nodeId + '.mp3');
-    candidates.push(nodeId + '.wav');
-  }
-
-  function tryCandidate(i){
-    if(i >= candidates.length){ fallbackSpeak(text, avatar); return; }
-    WavEngine.fileExists(candidates[i], function(exists){
-      if(exists){
-        stopSpeech();
-        WavEngine.enqueue([{rel: candidates[i]}]);
-      }else{
-        tryCandidate(i + 1);
-      }
-    });
-  }
-  tryCandidate(0);
+  // 直接以 .wav 路径入队；loadBuffer 内部会优先尝试同名 .mp3，缺失再回退 .wav，
+  // 省去逐个候选的 HEAD 探测，把“首音延迟”从 2~4 个网络往返降到约 1 个。
+  var wavPath = hint
+    ? (String(hint).indexOf('.wav') >= 0 ? hint : hint + '.wav')
+    : (nodeId ? nodeId + '.wav' : null);
+  if(!wavPath){ fallbackSpeak(text, avatar); return; }
+  WavEngine.enqueue([{rel: wavPath}], null, function(rel, err){
+    // 仅在“音频文件确实缺失”时回退 Web Speech；切页导致的 __ABORT__ 不回退
+    if(err && err !== '__ABORT__') fallbackSpeak(text, avatar);
+  });
 }
 
 // ==================== 语音引擎（Web Speech API 保底） ====================
@@ -2969,9 +2958,9 @@ function renderScene(node, nodeId){
     // 注意：即使是 system 旁白，若存在对应的 WAV 也要播放（否则只朗读人物台词）
     var sp = node.avatar || '';
     if(sp !== ''){
-      scheduleVoice(node.text, node.avatar, 220, nodeId);
+      scheduleVoice(node.text, node.avatar, 100, nodeId);
     }else{
-      scheduleVoice(node.text, 'system', 220, nodeId);
+      scheduleVoice(node.text, 'system', 100, nodeId);
     }
   }
   else if(scene === 'chat'){
@@ -2984,7 +2973,7 @@ function renderScene(node, nodeId){
     playSFX('ring');
     // 骗子来电台词朗读；"(我...)"/"（我...）"开头的台词是受害人自己说的
     var selfTalk = /^[（(]我/.test(node.text || '');
-    scheduleVoice(node.text, selfTalk ? 'mc' : node.avatar, 320, nodeId);
+    scheduleVoice(node.text, selfTalk ? 'mc' : node.avatar, 150, nodeId);
   }
   else if(scene === 'transfer'){
     area.innerHTML = renderTransfer(node);
@@ -2994,7 +2983,7 @@ function renderScene(node, nodeId){
     area.innerHTML = renderPopup(node);
     playSFX('message');
     // 弹窗多为数据/权限表格，只朗读诈骗分子的"口头话术"
-    if(node.voice) scheduleVoice(node.voice, node.avatar, 280, nodeId);
+    if(node.voice) scheduleVoice(node.voice, node.avatar, 120, nodeId);
   }
 
   // 滚到底部
@@ -3014,7 +3003,7 @@ function scheduleVoice(text, avatar, delay, nodeId){
 function scheduleChatVoice(node, nodeId){
   var msgs = node.messages || [];
   var myId = speechScheduleId;
-  var t = 300;
+  var t = 180;
   msgs.forEach(function(m, i){
     if(m.from === 'system') return; // 系统消息不朗读
     var av = (m.from === 'self') ? 'mc' : (node.avatar || 'stranger');
