@@ -3720,10 +3720,13 @@ function shareGame(){
 
 // ==================== 资源预加载 ====================
 function preloadAssets(){
-  // 仅预载首屏必需资源，其余图片/语音在对应场景出现时按需加载，显著加快首屏
+  // 预载全部角色头像 + 关键背景图，确保游戏中不出现图片加载延迟（仅语音按需）
   var imgs = [
     'avatars/title_bg.jpg',
-    'avatars/mc.png','avatars/victim.png',
+    'avatars/mc.png','avatars/victim.png','avatars/stranger.png','avatars/service.png',
+    'avatars/service_scam.png','avatars/guru.png','avatars/loaner.png','avatars/buyer.png',
+    'avatars/prosecutor.png','avatars/friend.png','avatars/police.png',
+    'avatars/porn_scam.png','avatars/romance_scam.png',
     'avatars/cg_intro_1.jpg','avatars/cg_intro_2.jpg','avatars/cg_intro_3.jpg','avatars/cg_intro_4.jpg',
     'avatars/cg_intro_5.jpg','avatars/cg_intro_6.jpg','avatars/cg_intro_8.jpg',
     'avatars/ending_bad.jpg',
